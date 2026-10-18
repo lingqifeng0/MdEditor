@@ -54,6 +54,65 @@ test('cold click starts one simulated player; same-file seek reuses its connecti
   assert.equal(f.session.executable, f.executable)
 })
 
+test('FrameFlow metadata is accepted without an mpv brand and cold launch keeps its own IPC instance', async t => {
+  const f = await fixture(t, { frameflow:true })
+  const checked = await f.controller.checkPlayer(f.settings)
+  assert.equal(checked.file, f.executable)
+  assert.equal(checked.version, '7.1.2.1027')
+  assert.equal(f.spawns, 0, 'Checking settings must never launch playback')
+  const result = await f.controller.request(f.href(f.first, 461), f.document)
+  assert.equal(result.seconds, 461)
+  assert.equal(f.spawns, 1)
+  assert.ok(f.launches[0].args.includes('--process-instance=multi'))
+  assert.ok(f.launches[0].args.includes('--resume-playback=no'))
+  assert.ok(f.launches[0].args.includes('--input-ipc-server=' + f.session.endpoint))
+  assert.deepEqual(f.servers[0].commands.find(command => command[0] === 'loadfile'),
+    ['loadfile', f.first, 'replace', -1, { start:'461.000', 'resume-playback':'no' }])
+  await f.controller.request(f.href(f.first, 42), f.document)
+  assert.equal(f.spawns, 1)
+  assert.equal(f.servers[0].commands.filter(command => command[0] === 'loadfile').length, 1)
+  assert.equal(f.servers[0].position, 42)
+})
+
+test('FrameFlow reconnects an authenticated existing window and gives explicit zero priority over saved progress', async t => {
+  const f = await fixture(t, { frameflow:true, settings:{ autoPlay:false } })
+  const server = await new FakeMpv(endpoint(), { savedPosition:700 }).start()
+  f.servers.push(server)
+  f.session = { endpoint:server.endpoint, executable:f.executable }
+  assert.equal((await f.controller.request(f.href(f.first, 461.85), f.document)).seconds, 461.85)
+  const result = await f.controller.request(f.href(f.second, 0), f.document)
+  assert.equal(f.spawns, 0)
+  assert.equal(result.file, f.second)
+  assert.equal(server.position, 0)
+  assert.equal(server.pause, true)
+  assert.deepEqual(server.commands.filter(command => command[0] === 'loadfile').at(-1),
+    ['loadfile', f.second, 'replace', -1, { start:'0.000', 'resume-playback':'no' }])
+  f.controller.dispose()
+  assert.equal(server.server.listening, true)
+  assert.equal(server.commands.some(command => command[0] === 'quit'), false)
+})
+
+test('FrameFlow accepts a case-insensitive executable path and a custom executable name', async t => {
+  const f = await fixture(t, { frameflow:true })
+  const settings = { ...f.settings, playerPath:f.executable.replace('FrameFlow.exe', 'FRAMEFLOW.EXE') }
+  assert.ok(api.samePath(await api.resolvePlayer(settings, f.application), f.executable))
+  const renamed = await fixture(t, { frameflow:true, executableName:'我的视频播放器.exe' })
+  await renamed.controller.request(renamed.href(renamed.first, 461), renamed.document)
+  assert.equal(renamed.launches[0].file, renamed.executable)
+  assert.ok(renamed.launches[0].args.includes('--process-instance=multi'))
+  assert.deepEqual(renamed.servers[0].commands.find(command => command[0] === 'loadfile').at(-1),
+    { start:'461.000', 'resume-playback':'no' })
+})
+
+test('FrameFlow never sends commands to a pipe owned by a different executable', async t => {
+  const f = await fixture(t, { frameflow:true, wrongIdentity:true })
+  const server = await new FakeMpv(endpoint()).start()
+  f.servers.push(server)
+  f.session = { endpoint:server.endpoint, executable:f.executable }
+  await assert.rejects(f.controller.request(f.href(), f.document), { code:'START_TIMEOUT' })
+  assert.ok(f.servers.every(server => server.commands.length === 0))
+})
+
 test('switching video loads the new file and honors paused replay', async t => {
   const f = await fixture(t)
   await f.controller.request(f.href(), f.document)
@@ -110,17 +169,38 @@ test('missing media and invalid executable never start or command a player', asy
   await assert.rejects(f.controller.request(f.href(path.join(f.directory, 'missing.mp4')), f.document), { code:'MEDIA_MISSING' })
   f.settings = { ...f.settings, playerPath:'' }
   await assert.rejects(f.controller.request(f.href(), f.document), { code:'PLAYER_NOT_SET' })
-  f.settings = { ...f.settings, playerPath:'wrong.exe' }
+  f.settings = { ...f.settings, playerPath:'wrong.cmd' }
   await assert.rejects(f.controller.request(f.href(), f.document), { code:'WRONG_PLAYER' })
   f.settings = { ...f.settings, playerPath:'missing/mpv.exe' }
   await assert.rejects(f.controller.request(f.href(), f.document), { code:'PLAYER_MISSING' })
   assert.equal(f.spawns, 0)
 })
 
-test('an executable renamed to mpv is rejected by its version metadata', async t => {
-  const f = await fixture(t, { wrongPlayer:true })
-  await assert.rejects(f.controller.request(f.href(), f.document), { code:'WRONG_PLAYER' })
+test('user-selected executable names and unknown branding are accepted when IPC is compatible', async t => {
+  const f = await fixture(t, { executableName:'课程回看.exe', wrongPlayer:true })
+  const checked = await f.controller.checkPlayer(f.settings)
+  assert.equal(checked.file, f.executable)
   assert.equal(f.spawns, 0)
+  assert.equal((await f.controller.request(f.href(), f.document)).seconds, 83.25)
+  assert.equal(f.launches[0].file, f.executable)
+  assert.equal(f.spawns, 1)
+})
+
+test('a selected program without compatible IPC never receives load or seek commands', async t => {
+  const f = await fixture(t, { executableName:'我的程序.exe', wrongPlayer:true, badHandshake:true })
+  await f.controller.checkPlayer(f.settings)
+  assert.equal(f.spawns, 0)
+  await assert.rejects(f.controller.request(f.href(), f.document), { code:'START_TIMEOUT' })
+  assert.equal(f.spawns, 1)
+  assert.ok(f.servers.every(server => server.commands.every(command => command[0] === 'get_property')))
+  assert.ok(f.log.some(message => message.includes('mpv 的文件加载和定位接口')))
+})
+
+test('renamed mpv.net keeps the selected executable and uses its multi-instance frontend', async t => {
+  const f = await fixture(t, { executableName:'我的回看工具.exe', mpvnet:true })
+  await f.controller.request(f.href(), f.document)
+  assert.equal(f.launches[0].file, f.executable)
+  assert.ok(f.launches[0].args.includes('--process-instance=multi'))
 })
 
 test('wrong pipe executable is never sent a player command', async t => {

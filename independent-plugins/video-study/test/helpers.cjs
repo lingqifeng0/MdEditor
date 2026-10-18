@@ -91,7 +91,7 @@ class FakeMpv {
       const id = ++this.loadId
       this.path = argument
       this.duration = undefined
-      this.position = 0
+      this.position = Number(command[4]?.start ?? this.options.savedPosition ?? 0)
       this.event({ event: 'start-file' })
       reply()
       this.later(() => {
@@ -130,7 +130,7 @@ async function fixture(t, options = {}) {
   const noteDirectory = path.join(directory, '笔记')
   const mediaDirectory = path.join(directory, '视频')
   for (const dir of [application, playerDirectory, noteDirectory, mediaDirectory]) await fs.mkdir(dir)
-  const executable = path.join(playerDirectory, options.mpvnet ? 'mpvnet.exe' : 'mpv.exe')
+  const executable = path.join(playerDirectory, options.executableName ?? (options.frameflow ? 'FrameFlow.exe' : options.mpvnet ? 'mpvnet.exe' : 'mpv.exe'))
   const first = path.join(mediaDirectory, '课程 一 #%25.mp4')
   const second = path.join(mediaDirectory, '课程 二.mp4')
   const document = path.join(noteDirectory, '学习.md')
@@ -154,7 +154,12 @@ async function fixture(t, options = {}) {
         started: '2026-10-10T00:00:00.000Z'
       }
     },
-    async inspect() { return { product: options.wrongPlayer ? 'Unrelated app' : 'mpv', description: 'mpv', original: 'mpv.exe', version: 'test' } },
+    async inspect() {
+      return options.frameflow
+        ? { product: 'FrameFlow', description: 'FrameFlow 视频播放器', original: 'FrameFlow.exe', version: '7.1.2.1027' }
+        : options.mpvnet ? { product: 'mpv.net', description: 'mpv.net', original: 'mpvnet.exe', version: 'test' }
+          : { product: 'mpv', description: 'mpv', original: 'mpv.exe', version: 'test' }
+    },
     async focus() { ++focusCalls; if (options.focusError) throw new Error('No foreground permission') },
     dispose() { ++disposed }
   }

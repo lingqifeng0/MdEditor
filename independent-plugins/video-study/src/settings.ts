@@ -36,10 +36,10 @@ export function normalizeSettings(raw: Record<string, unknown>): Settings {
 }
 
 export async function resolvePlayer(settings: Settings, application: string): Promise<string> {
-  if (!settings.playerPath) throw new StudyError('PLAYER_NOT_SET', '请先打开“视频回看设置”，选择并保存 mpvnet.exe 或 mpv.exe。')
+  if (!settings.playerPath) throw new StudyError('PLAYER_NOT_SET', '请先打开“视频回看设置”，选择并保存你的播放器程序。')
   const configured = path.resolve(application, settings.playerPath)
-  if (!/^(?:mpvnet|mpv)\.exe$/i.test(path.basename(configured))) {
-    throw new StudyError('WRONG_PLAYER', '播放器只接受 mpvnet.exe 或 mpv.exe。')
+  if (path.extname(configured).toLowerCase() !== '.exe') {
+    throw new StudyError('WRONG_PLAYER', '请选择 Windows 播放器的 .exe 程序。')
   }
   try {
     const actual = await fs.realpath(configured)

@@ -63,7 +63,7 @@ export async function setup(
       }
     }
     if (action === 'choose') {
-      const choices = await ctx.desktop.chooseFile({ title: '选择 mpvnet.exe 或 mpv.exe', extensions: ['exe'], multiple: false }, context.windowId)
+      const choices = await ctx.desktop.chooseFile({ title: '选择播放器程序（.exe）', extensions: ['exe'], multiple: false }, context.windowId)
       current(ctx.signal)
       if (!choices.length) return { ok: true, cancelled: true }
       const checked = await controller.checkPlayer(normalizeSettings({ playerPath: choices[0] }), ctx.signal)

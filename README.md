@@ -6,11 +6,11 @@
 
 基于 [MarkText](https://github.com/marktext/marktext) 的本地 Markdown 编辑器定制版，重点改进文字工具栏、悬浮目录、图片与 HTML 布局，以及插件扩展。直接打开和保存 `.md` 文件，保留所见即所得、源码模式、数学公式、代码块和主题等原有能力。
 
-当前主程序版本：**`0.31.0-toolbar.v8.31`**。独立视频回看插件：**`0.2.3`**。本次版本以 **Windows x64** 为主要验证平台。
+当前主程序版本：**`0.31.0-toolbar.v8.31`**。独立视频回看插件：**`0.2.5`**。本次版本以 **Windows x64** 为主要验证平台。
 
 ## 下载
 
-从 [最新 Release](https://github.com/lingqifeng0/MdEditor/releases/latest) 下载 Windows 安装器、便携 ZIP 和独立视频回看插件。更新插件时，在偏好设置中导入新的 `.mtplug`，原有播放器路径与设置保留。
+从 [主程序最新 Release](https://github.com/lingqifeng0/MdEditor/releases/latest) 下载 Windows 安装器与便携 ZIP；[视频回看插件 0.2.5](https://github.com/lingqifeng0/MdEditor/releases/tag/video-study-v0.2.5) 单独发布，新增 FrameFlow 适配。更新插件时，在偏好设置中导入新的 `.mtplug`，原有播放器路径与设置保留。
 
 ## 界面预览
 
@@ -74,7 +74,7 @@
 
 ### 视频时间戳回看插件
 
-视频回看是仓库内的**独立插件**，通过 mpv / mpv.net 的本地 IPC 打开视频并定位到笔记对应时间。支持相对视频路径、播放器连接复用、播放或暂停选项，以及回看时显示播放器窗口。
+视频回看是仓库内的**独立插件**，通过本地 IPC 在 [FrameFlow](https://github.com/lingqifeng0/FrameFlow) 中打开视频并精确定位到笔记对应时间，也兼容 mpv.net 和 mpv。支持相对视频路径、播放器连接复用、播放或暂停选项，以及回看时显示播放器窗口。
 
 ```markdown
 [00:01:23.250](<../视频.mp4#t=83.250>)
@@ -82,7 +82,9 @@
 
 保存 Markdown 后，`Ctrl`＋点击时间戳，或使用编辑器的“打开链接”入口回看。视频地址相对于当前笔记解析；移动笔记与视频时保留相对目录。
 
-插件 0.2.2 修复保存设置时提示区高度反复变化、带动“链接写法”等说明上下闪动的问题。常规反馈预留三行，长路径换行时在检查期间保留完整高度。
+插件 0.2.5 取消播放器文件名白名单，使用你自行选择的 `.exe` 路径，并在实际回看时验证兼容接口。支持 FrameFlow 的默认通信管道和迁移保留的旧管道。加载视频时携带明确起始时间，随后核对精确定位结果，使笔记时间戳优先于播放器的历史断点。无法复用连接时，创建独立回看实例。以上逻辑全部属于独立插件。
+
+保留 0.2.2 对保存设置时提示区高度变化、带动“链接写法”等说明上下闪动的修复。常规反馈预留三行，长路径换行时在检查期间保留完整高度。
 
 插件与主程序分别更新。安装或更新主程序后，已有插件不会自动替换；在 **偏好设置 → 插件** 中导入新 `.mtplug`，可保留原有播放器路径和设置。
 
@@ -158,7 +160,7 @@ node independent-plugins/video-study/scripts/build.cjs
 node --test independent-plugins/video-study/test/*.test.cjs
 ```
 
-视频插件还需要 Windows .NET Framework C# 编译器来生成它自己的进程身份检查程序。产物位于 `independent-plugins/video-study/dist/`；将 `local.video-study-0.2.3.mtplug` 导入编辑器并启用后，在插件设置里选择 `mpvnet.exe` 或 `mpv.exe`。
+视频插件还需要 Windows .NET Framework C# 编译器来生成它自己的进程身份检查程序。产物位于 `independent-plugins/video-study/dist/`；将 `local.video-study-0.2.5.mtplug` 导入编辑器并启用后，在插件设置里选择你使用的播放器 `.exe`。支持 FrameFlow、mpv.net 和兼容 mpv JSON IPC 的播放器，程序文件名可以自定义。
 
 示例插件安装包生成到 `dist/plugins/`。
 

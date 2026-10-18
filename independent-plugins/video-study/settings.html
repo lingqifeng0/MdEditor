@@ -26,9 +26,9 @@
 </style>
 <body>
   <h2>视频回看</h2>
-  <p class="muted">在笔记中打开时间戳，由这个插件直接启动或连接 mpv / mpv.net，并定位到对应时间。</p>
+  <p class="muted">在笔记中打开时间戳，直接启动或连接你选择的播放器，并定位到对应时间。支持 FrameFlow、mpv.net 和兼容 mpv JSON IPC 的播放器。</p>
   <label for="player">播放器程序</label>
-  <div class="row"><input id="player" type="text" spellcheck="false" placeholder="选择 mpvnet.exe 或 mpv.exe"><button id="choose">选择程序</button></div>
+  <div class="row"><input id="player" type="text" spellcheck="false" placeholder="选择你使用的播放器 .exe 程序"><button id="choose">选择程序</button></div>
   <p class="muted">相对程序路径以 MdEditor 程序所在文件夹为起点：<br><code id="application"></code></p>
   <label class="option"><input id="autoPlay" type="checkbox" checked>定位后开始播放（取消勾选则保持暂停）</label>
   <label class="option"><input id="bringToFront" type="checkbox" checked>回看时显示播放器窗口</label>
@@ -37,7 +37,7 @@
   <div class="help">
     <p>链接写法：<code>[00:01:23.250](&lt;../视频.mp4#t=83.250&gt;)</code>。视频地址相对于这篇 Markdown 所在文件夹解析，移动时请保留笔记与视频的相对目录。</p>
     <p class="muted">在正文中 Ctrl＋点击时间戳，或通过 MdEditor 的“打开链接”入口回看。链接直接由插件接管，不需要浏览器、127.0.0.1 或固定端口。</p>
-    <p class="muted">“检查路径”、保存设置和启用插件只检查程序，不打开视频。停用插件会关闭它自己的通信和身份检查程序，播放器会保留。</p>
+    <p class="muted">“检查路径”、保存设置和启用插件只检查程序路径，不打开视频。实际回看时验证所选播放器的 mpv 通信接口；文件名可以自定义。停用插件会关闭它自己的通信和身份检查程序，播放器会保留。</p>
   </div>
   <script>
     const element = id => document.getElementById(id)

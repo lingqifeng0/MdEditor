@@ -80,7 +80,7 @@ test('actual v8.31 host permission routing reproduces the old failure and accept
   assert.equal(await control('link', payload), true)
   // It now reaches the next legitimate check, proving the saved original path arrived.
   // An empty test configuration deliberately prevents any player from launching.
-  await until(() => electron.notices.some(message => message.includes('选择并保存 mpvnet.exe')))
+  await until(() => electron.notices.some(message => message.includes('选择并保存你的播放器程序')))
   assert.equal(electron.notices.some(message => message.includes('请先保存')), false)
   assert.equal(await control('link', { ...payload, href:'https://example.com' }), false)
   const settings = await control('view-message', { owner:manifest.id, id:'settings', message:{ action:'read' } })

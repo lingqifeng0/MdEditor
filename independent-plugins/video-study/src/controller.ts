@@ -29,7 +29,8 @@ export interface ControllerOptions {
   seekTimeout?: number
 }
 
-interface Connection extends Session { client: MpvClient }
+type Frontend = 'frameflow' | 'mpvnet' | 'mpv'
+interface Connection extends Session { client: MpvClient; frontend: Frontend }
 interface Launch { endpoint: string; executable: string; failed: boolean; at: number }
 const pipePrefix = '\\\\.\\pipe\\'
 const validEndpoint = (value: unknown): value is string =>
@@ -84,15 +85,16 @@ export class ReplayController {
     this.connection = null
   }
 
-  async checkPlayer(settings: Settings, signal?: AbortSignal): Promise<{ file: string; version: string }> {
+  async checkPlayer(settings: Settings, signal?: AbortSignal): Promise<{ file: string; version: string; frontend: Frontend }> {
     const file = await resolvePlayer(settings, this.options.application)
     current(signal)
     const info = await this.options.native.inspect(file, signal)
     const description = [info.product, info.description, info.original].join(' ').toLowerCase()
-    if (!description.includes('mpv')) {
-      throw new StudyError('WRONG_PLAYER', '这个程序的版本信息不属于 mpv/mpv.net，请选择实际的播放器程序。')
-    }
-    return { file, version: info.version }
+    // Metadata only selects frontend-specific arguments; compatibility is
+    // verified against the selected process's live IPC, never a brand name.
+    const frontend = description.includes('frameflow') ? 'frameflow'
+      : /mpv[.\s-]?net/.test(description) ? 'mpvnet' : 'mpv'
+    return { file, version: info.version, frontend }
   }
 
   private async connect(settings: Settings, signal: AbortSignal): Promise<Connection> {
@@ -100,7 +102,7 @@ export class ReplayController {
     current(signal)
     if (this.connection?.client.alive && samePath(this.connection.executable, executable)) return this.connection
     this.dropConnection()
-    await this.checkPlayer(settings, signal)
+    const { frontend } = await this.checkPlayer(settings, signal)
     current(signal)
     const endpoints: string[] = []
     const stored = await this.options.readSession()
@@ -111,9 +113,10 @@ export class ReplayController {
     }
     if (this.launch && !this.launch.failed && samePath(this.launch.executable, executable)) endpoints.unshift(this.launch.endpoint)
     endpoints.push(...(this.options.existingEndpoints ??
-      (path.basename(executable).toLowerCase() === 'mpvnet.exe' ? [pipePrefix + 'mpvnet-modern'] : [])))
+      (frontend === 'frameflow' ? [pipePrefix + 'FrameFlow', pipePrefix + 'mpvnet-modern'] :
+        frontend === 'mpvnet' ? [pipePrefix + 'mpvnet-modern'] : [])))
     for (const endpoint of new Set(endpoints)) {
-      const connected = await this.tryConnect(endpoint, executable, signal)
+      const connected = await this.tryConnect(endpoint, executable, frontend, signal)
       if (connected) return connected
     }
 
@@ -128,7 +131,7 @@ export class ReplayController {
         '--idle=yes', '--pause=yes', '--resume-playback=no', '--save-position-on-quit=no',
         '--input-ipc-server=' + launch.endpoint
       ]
-      if (path.basename(executable).toLowerCase() === 'mpvnet.exe') args.unshift('--process-instance=multi')
+      if (frontend !== 'mpv') args.unshift('--process-instance=multi')
       current(signal)
       const process = (this.options.spawnPlayer ?? this.spawnPlayer)(executable, args)
       process.once('error', () => { launch.failed = true })
@@ -141,11 +144,11 @@ export class ReplayController {
     while (Date.now() < deadline) {
       current(signal)
       if (launch.failed) throw new StudyError('START_FAILED', '播放器启动失败，请检查播放器路径。')
-      const connected = await this.tryConnect(launch.endpoint, executable, signal)
+      const connected = await this.tryConnect(launch.endpoint, executable, frontend, signal)
       if (connected) return connected
       await sleep(30, signal)
     }
-    throw new StudyError('START_TIMEOUT', '播放器没有建立本地通信连接，请检查播放器程序后重试。')
+    throw new StudyError('START_TIMEOUT', '播放器没有建立兼容的本地通信连接，请确认所选程序支持 mpv JSON IPC。')
   }
 
   private spawnPlayer(executable: string, args: string[]): PlayerProcess {
@@ -154,7 +157,7 @@ export class ReplayController {
     }) as PlayerProcess
   }
 
-  private async tryConnect(endpoint: string, executable: string, signal: AbortSignal): Promise<Connection | null> {
+  private async tryConnect(endpoint: string, executable: string, frontend: Frontend, signal: AbortSignal): Promise<Connection | null> {
     let client: MpvClient | null = null
     try {
       client = await MpvClient.connect(endpoint, signal, 120)
@@ -174,7 +177,7 @@ export class ReplayController {
       if (typeof await client.get('pause', signal) !== 'boolean') {
         throw new StudyError('WRONG_IPC', '播放器没有提供可验证的播放状态。')
       }
-      const connection = { endpoint, executable, identity, client }
+      const connection = { endpoint, executable, identity, client, frontend }
       current(signal)
       this.connection = connection
       try { await this.options.saveSession({ endpoint, executable, identity }) } catch (error) {
@@ -208,7 +211,12 @@ export class ReplayController {
     if (!alreadyLoaded) {
       const after = client.serial
       client.beginLoad()
-      await client.command(['loadfile', file, 'replace'], signal)
+      // FrameFlow's on_preloaded hook gives an explicit per-file start priority
+      // over saved progress, including when reusing an already-open window.
+      const load = connection.frontend === 'frameflow'
+        ? ['loadfile', file, 'replace', -1, { start: seconds.toFixed(3), 'resume-playback': 'no' }]
+        : ['loadfile', file, 'replace']
+      await client.command(load, signal)
       const deadline = Date.now() + (this.options.loadTimeout ?? 15000)
       let loaded = false
       while (Date.now() < deadline) {

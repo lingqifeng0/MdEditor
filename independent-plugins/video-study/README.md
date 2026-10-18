@@ -1,10 +1,18 @@
+# MdEditor 8.31 视频回看插件
+
+独立的 **SDK 2 / API 2** 桌面插件。插件 ID 为 local.video-study，版本为 0.2.5。安装包仍然是 .mtplug，内部是 ZIP，根目录含 manifest.json、main.cjs、settings.html 和插件自己的身份检查程序。
+
+## 0.2.5 自选播放器与 FrameFlow 适配
+
+支持 [FrameFlow](https://github.com/lingqifeng0/FrameFlow) V27（基于 mpv.net/mpv）、mpv.net 和兼容 mpv JSON IPC 的播放器。播放器由用户自行选择，不再限制必须使用某几个文件名。自定义或改名后的 `.exe` 也可以保存；版本信息仅用于识别前端所需参数，不作为品牌准入名单。实际回看时验证通信进程身份以及加载、定位、暂停等接口。
+
+优先复用已经验证的会话，随后尝试 FrameFlow 默认命名管道，以及迁移配置可能保留的 mpvnet-modern 管道。无可用连接时，使用 `--process-instance=multi` 创建带随机通信地址的独立回看实例，避免启动请求被转交后丢失专用通信地址。
+
+在 FrameFlow 中加载新视频时携带该条链接的 `start` 和 `resume-playback=no` 文件选项，包括显式零秒起点；随后仍执行 `absolute+exact` 定位并读取时间、路径和暂停状态确认结果。历史断点不覆盖本次回看目标。适配依据为 [FrameFlow V27 源码](https://github.com/lingqifeng0/FrameFlow/tree/ba53c27b917c5f42c20ead4e6d0f9ea13851f292)，只通过外部 JSON IPC 通信，不捆绑播放器。
+
 ## 0.2.3 开源许可补充
 
 安装包附带 MIT `LICENSE` 与 `NOTICE.md`，保留适用的上游版权及许可声明。延续 0.2.2 的保存提示区高度修复，播放器定位逻辑不变。
-
-# MdEditor 8.31 视频回看插件
-
-独立的 **SDK 2 / API 2** 桌面插件。插件 ID 为 local.video-study，版本为 0.2.3。安装包仍然是 .mtplug，内部是 ZIP，根目录含 manifest.json、main.cjs、settings.html 和插件自己的身份检查程序。
 
 旧版 SDK 1 的 local.video-study-0.1.1.mtplug 使用宿主 ipc.mpv，不能作为 API 2 插件使用。新版不要求修改 MdEditor 主程序、app.asar 或 mpv 配置。
 
@@ -14,8 +22,8 @@
 
 ## 安装和使用
 
-1. 在 **MdEditor 8.31 → 插件 → 导入插件包** 中选择 local.video-study-0.2.3.mtplug，更新或安装，启用并授权。更新时保留原有设置。
-2. 在 **偏好设置 → 插件** 中打开视频回看的设置，选择真正的 mpvnet.exe 或 mpv.exe，点击 **保存设置**。例如本机的 C:/App/mpvnet-modern/mpvnet.exe。已有有效配置时无需重新选择。
+1. 在 **MdEditor 8.31 → 插件 → 导入插件包** 中选择 local.video-study-0.2.5.mtplug，更新或安装，启用并授权。更新时保留原有设置。
+2. 在 **偏好设置 → 插件** 中打开视频回看的设置，选择你使用的播放器 `.exe`，点击 **保存设置**。FrameFlow 可选择实际的 FrameFlow.exe；自定义文件名同样可以。原来选择的是已改名或移动的旧程序时，在这里重新选择新程序；已有有效配置时无需重新选择。
 3. 打开已经保存的 Markdown，Ctrl＋点击视频时间戳，或使用 MdEditor 的“打开链接”入口。
 
 示例：
@@ -44,7 +52,7 @@ t 的单位为秒，最多三位小数。视频文件路径相对于原始 Markd
 
 插件自己使用 Node child_process 启动播放器，通过 Windows 命名管道连接 [mpv JSON IPC](https://mpv.io/manual/stable/#json-ipc)。启动参数按数组传递，不经过命令行拼接或浏览器。
 
-优先复用本插件已验证的播放器会话。对于当前 mpvnet-modern，也可以尝试已有 \\.\pipe\mpvnet-modern；只有 Windows 查询到的管道所属进程与所选程序一致时才发送 mpv 命令。没有可用连接时，插件创建随机命名管道，并用 --process-instance=multi 启动 mpv.net 的专用回看实例。普通已经打开、没有 IPC 的播放器无法直接连接，首次回看可能创建新实例。
+优先复用本插件已验证的播放器会话。FrameFlow 尝试默认管道及迁移保留的旧管道，mpv.net 继续尝试 mpvnet-modern 管道；只有 Windows 查询到的管道所属进程与所选程序一致时才发送命令。没有可用连接时，插件创建随机命名管道，并为 FrameFlow 或 mpv.net 添加 --process-instance=multi，启动专用回看实例。没有启用 IPC、或修改了默认管道且未由本插件启动的现有窗口，首次回看可能需要创建新实例。
 
 身份检查包含 PID、真实程序路径和进程启动时间。插件内的 native-helper.exe 由 native/NativeHelper.cs 编译，启用时预热并复用；每次点击不会启动 PowerShell 或现场编译。
 
@@ -68,9 +76,11 @@ t 的单位为秒，最多三位小数。视频文件路径相对于原始 Markd
 
 输出：
 
-- dist/local.video-study-0.2.3.mtplug：安装包。
+- dist/local.video-study-0.2.5.mtplug：安装包。
 - dist/package/：可通过“导入文件夹”安装的解包目录。
-- dist/marktext-video-study-sdk2-0.2.3-src.zip：可迁移源码包。
+- dist/marktext-video-study-sdk2-0.2.5-src.zip：可迁移源码包。
 - dist/SHA256.json：安装包与源码包的 SHA256。
 
-测试使用模拟 mpv 的真实命名管道，验证冷启动调度、连接复用、切换文件、快速点击、取消、断连重连、错误身份、文件缺失、设置和生命周期；本机播放器只读取程序版本信息，不进行播放。实际解码画面与回看速度需要用户点击真实时间戳后验收。
+自动化测试使用模拟 mpv 的真实命名管道，验证自选文件名、冷启动调度、连接复用、切换文件、快速点击、取消、断连重连、错误身份、接口不兼容、文件缺失、设置和生命周期，不播放用户媒体。
+
+本版另外使用 FrameFlow V27 副本、独立配置和生成的视频验证了 461 秒、461.850 秒、零秒起点、历史断点优先级、默认与旧通信管道复用，以及定位后播放。用 MdEditor 成品和临时配置验证插件升级、设置保留及保存提示不闪动。播放器适配和时间戳逻辑全部属于本独立插件，无需重新构建 MdEditor 主程序。

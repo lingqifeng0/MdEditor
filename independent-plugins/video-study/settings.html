@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>视频回看设置</title>
+<style>
+  :root { color-scheme: light; --bg:#fff; --text:#20242b; --muted:#596273; --border:#ccd3dd; --field:#f6f8fb; --accent:#2868d8; --error:#b23232; }
+  :root[data-dark="true"] { color-scheme:dark; --bg:#262626; --text:#eee; --muted:#bbc2cd; --border:#555; --field:#303030; --accent:#7baeff; --error:#ff9999; }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:22px; background:var(--bg); color:var(--text); font:14px/1.7 system-ui,"Microsoft YaHei",sans-serif; }
+  h2 { margin:0 0 10px; font-size:20px; }
+  p { margin:8px 0 14px; }
+  .muted { color:var(--muted); }
+  .row { display:flex; gap:8px; margin:8px 0 10px; }
+  input[type="text"] { flex:1; min-width:100px; color:var(--text); background:var(--field); border:1px solid var(--border); border-radius:5px; padding:9px 10px; }
+  button { padding:8px 14px; cursor:pointer; border:1px solid var(--border); border-radius:5px; background:var(--field); color:var(--text); white-space:nowrap; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  :root[data-dark="true"] button.primary { color:#132036; }
+  button:disabled { opacity:.55; cursor:wait; }
+  label.option { display:block; margin:10px 0; }
+  input[type="checkbox"] { margin-right:8px; accent-color:var(--accent); }
+  code { background:var(--field); padding:2px 5px; border-radius:3px; overflow-wrap:anywhere; }
+  #status { min-height:calc(1.7em * 3); white-space:pre-line; overflow-wrap:anywhere; }
+  #status.error { color:var(--error); }
+  .help { border-top:1px solid var(--border); margin-top:20px; padding-top:12px; }
+</style>
+<body>
+  <h2>视频回看</h2>
+  <p class="muted">在笔记中打开时间戳，由这个插件直接启动或连接 mpv / mpv.net，并定位到对应时间。</p>
+  <label for="player">播放器程序</label>
+  <div class="row"><input id="player" type="text" spellcheck="false" placeholder="选择 mpvnet.exe 或 mpv.exe"><button id="choose">选择程序</button></div>
+  <p class="muted">相对程序路径以 MdEditor 程序所在文件夹为起点：<br><code id="application"></code></p>
+  <label class="option"><input id="autoPlay" type="checkbox" checked>定位后开始播放（取消勾选则保持暂停）</label>
+  <label class="option"><input id="bringToFront" type="checkbox" checked>回看时显示播放器窗口</label>
+  <div class="row"><button id="save" class="primary">保存设置</button><button id="check">检查路径</button></div>
+  <p id="status" role="status" aria-live="polite"></p>
+  <div class="help">
+    <p>链接写法：<code>[00:01:23.250](&lt;../视频.mp4#t=83.250&gt;)</code>。视频地址相对于这篇 Markdown 所在文件夹解析，移动时请保留笔记与视频的相对目录。</p>
+    <p class="muted">在正文中 Ctrl＋点击时间戳，或通过 MdEditor 的“打开链接”入口回看。链接直接由插件接管，不需要浏览器、127.0.0.1 或固定端口。</p>
+    <p class="muted">“检查路径”、保存设置和启用插件只检查程序，不打开视频。停用插件会关闭它自己的通信和身份检查程序，播放器会保留。</p>
+  </div>
+  <script>
+    const element = id => document.getElementById(id)
+    const buttons = [...document.querySelectorAll('button')]
+    let busy = false
+    let initialized = false
+    function status(text, error = false) {
+      element('status').textContent = text
+      element('status').className = error ? 'error' : ''
+    }
+    function theme(value) { document.documentElement.dataset.dark = String(value) }
+    function values(data) {
+      element('player').value = data.playerPath || ''
+      element('autoPlay').checked = data.autoPlay
+      element('bringToFront').checked = data.bringToFront
+    }
+    async function perform(action) {
+      if (busy) return
+      const feedback = element('status')
+      const previousMinHeight = feedback.style.minHeight
+      // Keep wrapped results in place while the shorter pending message is shown.
+      feedback.style.minHeight = `${feedback.getBoundingClientRect().height}px`
+      feedback.setAttribute('aria-busy', 'true')
+      busy = true
+      buttons.forEach(button => { button.disabled = true })
+      status(action === 'choose' ? '请选择播放器程序…' : '正在检查程序路径…')
+      try {
+        const reply = await window.marktextView.request({
+          action, playerPath: element('player').value,
+          autoPlay: element('autoPlay').checked, bringToFront: element('bringToFront').checked
+        })
+        if (reply.cancelled) { status('已取消选择。'); return }
+        if (reply.settings) values(reply.settings)
+        if (reply.playerPath) element('player').value = reply.playerPath
+        status((action === 'save' ? '已保存。' : '程序路径有效。') +
+          '\n' + reply.resolved + (reply.version ? '\n播放器版本：' + reply.version : ''))
+      } catch (error) { status(error.message || String(error), true) }
+      finally {
+        feedback.style.minHeight = previousMinHeight
+        feedback.removeAttribute('aria-busy')
+        busy = false
+        buttons.forEach(button => { button.disabled = false })
+      }
+    }
+    async function initialize() {
+      if (initialized) return
+      initialized = true
+      try {
+        const reply = await window.marktextView.request({ action:'read' })
+        values(reply.settings)
+        theme(reply.dark)
+        element('application').textContent = reply.application
+        if (!reply.ok) status(reply.message, true)
+        else if (!reply.settings.playerPath) status('首次使用请先选择播放器，再保存设置。')
+      } catch (error) { initialized = false; status(error.message || String(error), true) }
+    }
+    window.marktextView.onData(initialize)
+    element('choose').onclick = () => perform('choose')
+    element('save').onclick = () => perform('save')
+    element('check').onclick = () => perform('check')
+    const themeTimer = setInterval(async () => {
+      if (!initialized || busy) return
+      try { theme((await window.marktextView.request({ action:'theme' })).dark) } catch {}
+    }, 1500)
+    window.addEventListener('pagehide', () => clearInterval(themeTimer))
+  </script>
+</body>
+</html>

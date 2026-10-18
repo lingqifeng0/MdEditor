@@ -1,0 +1,14 @@
+{
+  "formatVersion": 2,
+  "apiVersion": 2,
+  "id": "local.ui-example",
+  "name": "界面扩展示例",
+  "version": "0.1.0",
+  "description": "插件自己的侧栏、按钮、对话框、设置表单和 HTML 设置页。",
+  "main": "main.cjs",
+  "permissions": [
+    "editor.read",
+    "ui"
+  ],
+  "isDesktopOnly": true
+}

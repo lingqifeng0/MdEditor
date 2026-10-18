@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MarkText Desktop Plugin SDK 2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "apiVersion", "id", "name", "version", "main", "permissions", "isDesktopOnly"],
+  "properties": {
+    "formatVersion": { "const": 2 },
+    "apiVersion": { "const": 2 },
+    "id": { "type": "string", "maxLength": 100, "pattern": "^[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)+$" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[a-zA-Z0-9.-]+)?$" },
+    "description": { "type": "string", "maxLength": 2000 },
+    "author": { "type": "string", "maxLength": 2000 },
+    "main": { "type": "string", "maxLength": 240, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*[\\\\:]).+\\.cjs$" },
+    "permissions": { "type": "array", "uniqueItems": true, "items": { "enum": ["editor.read", "editor.write", "files.read", "files.write", "ui", "links", "desktop", "network"] } },
+    "isDesktopOnly": { "const": true }
+  }
+}

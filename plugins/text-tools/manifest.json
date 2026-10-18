@@ -1,0 +1,15 @@
+{
+  "formatVersion": 2,
+  "apiVersion": 2,
+  "id": "local.text-tools",
+  "name": "文字处理示例",
+  "version": "0.1.0",
+  "description": "通过通用事务修改选中文字，并保留撤销与视口。",
+  "main": "main.cjs",
+  "permissions": [
+    "editor.read",
+    "editor.write",
+    "ui"
+  ],
+  "isDesktopOnly": true
+}

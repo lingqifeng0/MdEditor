@@ -1,0 +1,16 @@
+<p>这部分 HTML、交互和校验全部由插件提供。</p>
+<label>问候语 <input id="greeting" /></label>
+<button id="save">保存插件设置</button>
+<p id="status" role="status"></p>
+<script>
+  marktextView.onData(async () => {
+    const values = await marktextView.request({ action: 'read' })
+    document.querySelector('#greeting').value = values.greeting ?? ''
+  })
+  document.querySelector('#save').onclick = async () => {
+    try {
+      await marktextView.request({ action: 'save', greeting: document.querySelector('#greeting').value })
+      document.querySelector('#status').textContent = '已保存'
+    } catch (error) { document.querySelector('#status').textContent = String(error) }
+  }
+</script>

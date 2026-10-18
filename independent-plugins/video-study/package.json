@@ -1,0 +1,16 @@
+{
+  "name": "marktext-video-study-sdk2",
+  "version": "0.2.3",
+  "license": "MIT",
+  "private": true,
+  "description": "Independent MdEditor video replay plugin using MarkText SDK 2",
+  "scripts": {
+    "build": "node scripts/build.cjs",
+    "test": "node --test test/*.test.cjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.27.0",
+    "typescript": "^5.9.0"
+  }
+}

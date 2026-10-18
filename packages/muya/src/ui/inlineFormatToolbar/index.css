@@ -1,0 +1,392 @@
+.mu-float-wrapper.mu-format-picker-container {
+    overflow: visible;
+
+    border-radius: 2px;
+
+    transition: none;
+}
+
+.mu-format-picker {
+    width: max-content;
+    max-width: calc(100vw - 24px);
+    height: auto;
+
+    font-size: 13px;
+}
+
+.mu-format-picker ul,
+.mu-format-picker li {
+    margin: 0;
+    padding: 0;
+}
+
+.mu-format-picker ul {
+    display: flex;
+    flex-wrap: nowrap;
+    padding: 4px 7px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.mu-format-picker ul::-webkit-scrollbar {
+    display: none;
+}
+
+.mu-format-picker li.item {
+    position: relative;
+
+    display: flex;
+    flex: 0 0 30px;
+    align-items: center;
+    justify-content: space-around;
+    width: 30px;
+    height: 30px;
+
+    color: var(--icon-color);
+
+    list-style: none;
+    cursor: pointer;
+}
+
+.mu-format-picker li.item:hover {
+    background: var(--float-hover-color);
+}
+
+.mu-format-picker li.item.clear {
+    margin-left: 6px;
+}
+
+.mu-format-picker li.item.clear::before {
+    position: absolute;
+    top: 6px;
+    left: -3px;
+
+    width: 1px;
+    height: 18px;
+
+    background: var(--editor-color-10);
+
+    content: '';
+}
+
+.mu-format-picker li.item.active {
+    color: var(--theme-color);
+}
+
+.mu-toolbar-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 4px;
+
+    color: var(--icon-color);
+    font: inherit;
+
+    background: transparent;
+    border: 0;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.mu-toolbar-button:hover {
+    background: var(--float-hover-color);
+}
+
+.mu-color-button {
+    position: relative;
+
+    height: 28px;
+
+    font-weight: bold;
+}
+
+.mu-format-picker li.mu-color-tool {
+    flex-basis: 44px;
+    width: 44px;
+}
+
+.mu-color-dropdown {
+    min-width: 14px;
+    padding: 0;
+}
+
+.mu-current-color {
+    position: absolute;
+    right: 4px;
+    bottom: 2px;
+    left: 4px;
+
+    height: 3px;
+}
+
+.mu-toolbar-glyph {
+    width: 20px;
+    height: 20px;
+
+    pointer-events: none;
+}
+
+.mu-toolbar-svg {
+    display: inline-block;
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+
+    background: currentcolor;
+    mask-position: center;
+    mask-repeat: no-repeat;
+    mask-size: contain;
+}
+
+.mu-toolbar-dropdown {
+    font-size: 10px;
+}
+
+.mu-format-picker li.heading-n {
+    flex-basis: 40px;
+    width: 40px;
+}
+
+.mu-toolbar-menu,
+.mu-color-palette {
+    z-index: 10;
+
+    padding: 12px;
+
+    color: var(--editor-color);
+
+    background: var(--float-bg-color);
+    border: 1px solid var(--editor-color-10);
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgb(0 0 0 / 25%);
+}
+
+.mu-color-palette {
+    position: fixed;
+    top: -9999px;
+    left: -9999px;
+
+    box-sizing: border-box;
+    width: 280px;
+    max-width: calc(100vw - 48px);
+    max-height: calc(100vh - 48px);
+    overflow: auto;
+    scrollbar-width: thin;
+}
+
+.mu-color-palette.background {
+    width: 240px;
+}
+
+.mu-palette-group + .mu-palette-group {
+    margin-top: 12px;
+}
+
+.mu-color-swatch {
+    width: 100%;
+    height: auto;
+    padding: 0;
+
+    border: 1px solid var(--editor-color-10);
+    border-radius: 0;
+    cursor: pointer;
+    aspect-ratio: 1;
+}
+
+.mu-color-swatch:hover {
+    outline: 2px solid var(--theme-color);
+    outline-offset: 1px;
+}
+
+.mu-color-swatch:focus-visible {
+    outline: 2px solid var(--theme-color);
+    outline-offset: 1px;
+}
+
+.mu-palette-grid {
+    display: grid;
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+    gap: 3px;
+    margin-top: 7px;
+}
+
+.mu-palette-grid.round {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 9px;
+}
+
+.mu-palette-grid.round .mu-color-swatch {
+    border-radius: 50%;
+}
+
+.mu-palette-footer,
+.mu-custom-color-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 12px;
+}
+
+.mu-palette-action {
+    min-height: 28px;
+    padding: 4px 8px;
+
+    color: inherit;
+    font: inherit;
+
+    background: transparent;
+    border: 1px solid var(--editor-color-10);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.mu-palette-action:hover {
+    background: var(--float-hover-color);
+}
+
+.mu-custom-color-editor {
+    margin-top: 12px;
+    padding-top: 10px;
+
+    border-top: 1px solid var(--editor-color-10);
+}
+
+.mu-custom-color-row label {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+
+    white-space: nowrap;
+}
+
+.mu-color-input {
+    width: 32px;
+    height: 28px;
+    padding: 0;
+
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+}
+
+.mu-color-hex,
+.mu-toolbar-menu input {
+    width: 94px;
+    min-width: 0;
+    padding: 4px;
+
+    color: inherit;
+
+    background: var(--float-bg-color);
+    border: 1px solid var(--editor-color-10);
+    border-radius: 4px;
+}
+
+.mu-opacity-control {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.mu-opacity-control input {
+    width: 100%;
+    accent-color: var(--theme-color);
+}
+
+.mu-color-preview {
+    margin: 10px 0;
+
+    background: repeating-conic-gradient(#aaa 0% 25%, #fff 0% 50%) 0 / 12px 12px;
+    border-radius: 4px;
+}
+
+.mu-color-preview span {
+    display: block;
+    padding: 8px;
+
+    color: #222;
+    text-align: center;
+
+    border-radius: inherit;
+}
+
+.mu-color-validation {
+    margin-bottom: 8px;
+
+    color: var(--theme-color);
+    font-size: 12px;
+}
+
+.mu-toolbar-menu {
+    position: fixed;
+    top: -9999px;
+    left: -9999px;
+
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    max-height: calc(100vh - 48px);
+    overflow: auto;
+}
+
+.mu-heading-menu {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.mu-toolbar-menu label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.mu-heading-select {
+    height: 28px;
+
+    color: var(--icon-color);
+    font: inherit;
+
+    background: var(--float-bg-color, var(--editor-color));
+    border: 1px solid var(--editor-color-10);
+    border-radius: 3px;
+}
+
+.mu-color-label,
+.mu-custom-color {
+    color: var(--icon-color);
+    font-size: 12px;
+}
+
+.mu-color-hint {
+    margin-top: 10px;
+
+    color: var(--icon-color);
+    font-size: 11px;
+}
+
+.mu-custom-color {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    margin-left: 3px;
+}
+
+.mu-custom-color input {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+}
+
+.mu-toolbar-button:focus-visible,
+.mu-heading-select:focus-visible {
+    outline: 2px solid var(--theme-color);
+    outline-offset: 1px;
+}

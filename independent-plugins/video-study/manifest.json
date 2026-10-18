@@ -1,0 +1,11 @@
+{
+  "formatVersion": 2,
+  "apiVersion": 2,
+  "id": "local.video-study",
+  "name": "视频回看",
+  "version": "0.2.3",
+  "description": "在 MdEditor 中点击本地视频时间戳，通过插件自己的 mpv JSON IPC 加载和定位；支持 mpv.net、相对路径和连接复用。",
+  "main": "main.cjs",
+  "permissions": ["editor.read", "links", "ui", "desktop"],
+  "isDesktopOnly": true
+}

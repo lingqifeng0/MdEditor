@@ -1,0 +1,57 @@
+# Dependencies and generated application output
+node_modules/
+dist/
+out/
+packages/muya/lib/
+coverage/
+.vite/
+.runtime/
+.build-cache/
+build-output/
+
+# Local user data and test artifacts
+marktext-user-data/
+plugin-data/
+validation/
+windows-validation/
+test-results/
+playwright-report/
+.playwright-mcp/
+logs/
+temp/
+tmp/
+*.log
+*.min.json
+*.tsbuildinfo
+
+# Packaged binaries and archives
+*.zip
+*.7z
+*.exe
+*.dll
+*.mtplug
+*.blockmap
+*.dmg
+*.AppImage
+
+# Private configuration, credentials and editor state
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+.claude/
+.codex/
+.agents/
+.agent/
+.cursor/
+.trae/
+.vscode/
+.DS_Store
+Thumbs.db
+.eslintcache
+
+# Example plugin bundles are generated from their TypeScript sources
+/plugins/*/main.cjs

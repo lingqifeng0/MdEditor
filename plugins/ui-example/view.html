@@ -1,0 +1,23 @@
+<h2 id="greeting">独立插件侧栏</h2>
+<button id="refresh">读取当前笔记标题</button>
+<button id="dialog">打开对话框</button>
+<ul id="headings"></ul>
+<p id="error" role="alert"></p>
+<script>
+  const run = async action => {
+    try {
+      const result = await marktextView.request({ action })
+      if (action === 'inspect') {
+        document.querySelector('#greeting').textContent = result.greeting
+        document.querySelector('#headings').replaceChildren(...result.headings.map(heading => {
+          const item = document.createElement('li')
+          item.textContent = `H${heading.level} ${heading.text}`
+          return item
+        }))
+      }
+    } catch (error) { document.querySelector('#error').textContent = String(error) }
+  }
+  document.querySelector('#refresh').onclick = () => run('inspect')
+  document.querySelector('#dialog').onclick = () => run('dialog')
+  marktextView.onData(() => run('inspect'))
+</script>

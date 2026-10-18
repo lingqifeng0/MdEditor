@@ -1,0 +1,35 @@
+type TLevel = 'error' | 'warn' | 'log' | 'info';
+
+// The bundler replaces this build-time flag; the browser package needs no Node globals.
+declare const process: { env: { NODE_ENV?: string } };
+
+const levels: TLevel[] = ['error', 'warn', 'log', 'info'];
+let level: TLevel = 'log';
+
+type Ilogger = Record<TLevel, (...args: string[]) => void>;
+
+function debug(method: TLevel, ...args: unknown[]) {
+    if (
+        levels.indexOf(method) <= levels.indexOf(level)
+
+        && process.env.NODE_ENV !== 'production'
+    ) {
+        // eslint-disable-next-line no-console
+        console[method](...args);
+    }
+}
+
+function namespace(ns: string): Ilogger {
+    return levels.reduce((logger, method) => {
+        logger[method] = debug.bind(console, method, ns);
+
+        return logger;
+    }, {} as Ilogger);
+}
+
+namespace.level = (newLevel: TLevel) => {
+    level = newLevel;
+};
+debug.level = namespace.level;
+
+export default namespace;

@@ -1,0 +1,14 @@
+{
+  "formatVersion": 2,
+  "apiVersion": 2,
+  "id": "local.desktop-example",
+  "name": "独立桌面进程示例",
+  "version": "0.1.0",
+  "description": "插件自己创建、复用和关闭辅助进程；宿主不包含辅助程序。",
+  "main": "main.cjs",
+  "permissions": [
+    "ui",
+    "desktop"
+  ],
+  "isDesktopOnly": true
+}

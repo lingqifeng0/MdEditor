@@ -6,6 +6,7 @@ import type { Muya } from '../../index';
 import { ScrollPage } from '../../block/scrollPage';
 import { BLOCK_DOM_PROPERTY } from '../../config';
 import { isMouseEvent, throttle } from '../../utils';
+import { pointerElements } from '../../utils/pointerHitTest';
 import BaseFloat from '../baseFloat';
 import './index.css';
 
@@ -183,10 +184,9 @@ export class TableDragBar extends BaseFloat {
             if (!isMouseEvent(event))
                 return;
 
-            const { x, y } = event;
-            const els = [...document.elementsFromPoint(x, y)];
-            const aboveEls = [...document.elementsFromPoint(x, y - OFFSET)];
-            const leftEls = [...document.elementsFromPoint(x - OFFSET, y)];
+            const els = pointerElements(event);
+            const aboveEls = pointerElements(event, 0, -OFFSET);
+            const leftEls = pointerElements(event, -OFFSET, 0);
 
             const hasTableCell = (els: Element[]) =>
                 els.some(

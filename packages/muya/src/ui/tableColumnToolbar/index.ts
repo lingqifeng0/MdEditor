@@ -4,6 +4,7 @@ import type { Muya } from '../../index';
 import type { TableColumnToolIcon } from './config';
 import { BLOCK_DOM_PROPERTY } from '../../config';
 import { isMouseEvent, throttle } from '../../utils';
+import { pointerElements } from '../../utils/pointerHitTest';
 import { h, patch } from '../../utils/snabbdom';
 import BaseFloat from '../baseFloat';
 import icons from './config';
@@ -49,8 +50,7 @@ export class TableColumnToolbar extends BaseFloat {
             if (!isMouseEvent(event))
                 return;
 
-            const { x, y } = event;
-            const eles = [...document.elementsFromPoint(x, y)];
+            const eles = pointerElements(event);
 
             // Never show (or keep) the column tools while the inline format
             // picker is up — check before the hover guard below, which would
@@ -64,11 +64,11 @@ export class TableColumnToolbar extends BaseFloat {
             // The toolbar overhangs narrow columns, so (x, y + OFFSET) can
             // land on a neighbour while the pointer is on the toolbar. Keep
             // the current anchor until the pointer leaves it (#5574).
-            const topmost = document.elementFromPoint(x, y);
+            const topmost = eles[0];
             if (this.status && topmost && this.floatBox?.contains(topmost))
                 return;
 
-            const bellowEles = [...document.elementsFromPoint(x, y + OFFSET)];
+            const bellowEles = pointerElements(event, 0, OFFSET);
             const hasTableCell = (eles: Element[]) => {
                 return eles.some(
                     ele =>

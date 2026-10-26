@@ -11,6 +11,7 @@ import { isKeyboardEvent, isMouseEvent } from '../../utils';
 import { findScrollContainer } from '../../utils/dom';
 import { requestImageDeletion } from '../../utils/imageDeletion';
 import { collectMarkdownImageSources } from '../../utils/imageSources';
+import { pointerElements } from '../../utils/pointerHitTest';
 import { h, patch } from '../../utils/snabbdom';
 import BaseFloat from '../baseFloat';
 import { PREVIEW_BLOCK_NAMES, previewToolBarItems } from './config';
@@ -110,7 +111,7 @@ export class PreviewToolBar extends BaseFloat {
     }
 
     private _updateHover(event: MouseEvent) {
-        const elements = document.elementsFromPoint(event.clientX, event.clientY);
+        const elements = pointerElements(event);
         if (elements.some(element => this.floatBox?.contains(element)))
             return;
         const container = elements.find(element =>

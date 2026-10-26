@@ -76,7 +76,7 @@ function boot(markdown = SOURCE) {
 
 function hover(block: HTMLBlock, flush = true) {
     hits = [block.attachments!.head!.domNode!, block.domNode!];
-    mouseMove(document.body);
+    mouseMove(block.attachments!.head!.domNode!);
     if (flush)
         flushFrames();
 }
@@ -347,9 +347,9 @@ describe('html layout apply and viewport callbacks', () => {
         await vi.waitFor(() => expect(fixture.muya.getMarkdown()).not.toContain(SECOND));
         expect(fixture.muya.getMarkdown()).toContain(FIRST);
         const math = boot('before\n\n$$\nx+1\n$$\n\nafter');
-        const element = math.muya.domNode.querySelector('.mu-math-block')!;
+        const element = math.muya.domNode.querySelector<HTMLElement>('.mu-math-block')!;
         hits = [element];
-        mouseMove(document.body);
+        mouseMove(element);
         flushFrames();
         click(math.toolbar.container!.querySelector<HTMLElement>('li.edit')!);
         expect(math.muya.editor.activeContentBlock?.text).toBe('x+1');

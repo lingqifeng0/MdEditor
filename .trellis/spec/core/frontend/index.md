@@ -1,5 +1,9 @@
 # Frontend Development Guidelines
 
+## Pre-development and quality checks
+
+Read `packages/muya/AGENTS.md` for this package's independent TypeScript and lint conventions. For hover tools, read [the pointer contract](./pointer-hover.md). Run relevant co-located tests, package lint for changed files, the desktop typecheck/build and actual Electron interaction checks. Keep profiling notes and private reproduction fixtures outside Git.
+
 > Best practices for frontend development in this project.
 
 ---

@@ -9,6 +9,7 @@ import BulletList from '../../block/commonMark/bulletList';
 import OrderList from '../../block/commonMark/orderList';
 import { BLOCK_DOM_PROPERTY } from '../../config';
 import { isMouseEvent, throttle, verticalPositionInRect } from '../../utils';
+import { pointerElements } from '../../utils/pointerHitTest';
 import { h, patch } from '../../utils/snabbdom';
 import { getIcon } from './config';
 
@@ -120,16 +121,10 @@ export class ParagraphFrontButton {
             if (!isMouseEvent(event))
                 return;
 
-            const { x, y } = event;
-            const els = [
-                ...document.elementsFromPoint(x, y),
-                ...document.elementsFromPoint(x + LEFT_OFFSET, y),
-            ];
-            const outMostElement = els.find(
-                ele =>
-                    ele[BLOCK_DOM_PROPERTY]
-                    && (ele[BLOCK_DOM_PROPERTY] as Parent).isOutMostBlock,
+            const outMost = (elements: Element[]) => elements.find(ele =>
+                ele[BLOCK_DOM_PROPERTY] && (ele[BLOCK_DOM_PROPERTY] as Parent).isOutMostBlock,
             );
+            const outMostElement = outMost(pointerElements(event)) ?? outMost(pointerElements(event, LEFT_OFFSET));
             if (outMostElement) {
                 this.show(outMostElement[BLOCK_DOM_PROPERTY] as Parent);
                 this.render();
@@ -176,16 +171,10 @@ export class ParagraphFrontButton {
 
         event.preventDefault();
 
-        const { x, y } = event;
-        const els = [
-            ...document.elementsFromPoint(x, y),
-            ...document.elementsFromPoint(x + LEFT_OFFSET, y),
-        ];
-        const outMostElement = els.find(
-            ele =>
-                ele[BLOCK_DOM_PROPERTY]
-                && (ele[BLOCK_DOM_PROPERTY] as Parent).isOutMostBlock,
+        const outMost = (elements: Element[]) => elements.find(ele =>
+            ele[BLOCK_DOM_PROPERTY] && (ele[BLOCK_DOM_PROPERTY] as Parent).isOutMostBlock,
         );
+        const outMostElement = outMost(pointerElements(event)) ?? outMost(pointerElements(event, LEFT_OFFSET));
         this._moveShadow(event);
 
         if (

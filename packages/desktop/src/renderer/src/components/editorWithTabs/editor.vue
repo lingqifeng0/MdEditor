@@ -1125,6 +1125,9 @@ const replaceMisspelling = (payload: unknown) => {
 }
 
 const handleUndo = () => {
+  if (htmlLayoutOpen.value) {
+    return htmlLayoutEditor.value?.undo()
+  }
   if (sourceCode.value) {
     return
   }
@@ -1135,6 +1138,9 @@ const handleUndo = () => {
 }
 
 const handleRedo = () => {
+  if (htmlLayoutOpen.value) {
+    return htmlLayoutEditor.value?.redo()
+  }
   if (sourceCode.value) {
     return
   }

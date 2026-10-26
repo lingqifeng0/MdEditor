@@ -35,6 +35,26 @@
               HTML 源码
             </button>
           </div>
+          <div class="html-layout-tabs">
+            <button
+              type="button"
+              data-testid="html-layout-undo"
+              title="撤销（Ctrl+Z）"
+              :disabled="!historyState.canUndo || historyRestoring || addingImage || applying"
+              @click="undoLayout"
+            >
+              撤销
+            </button>
+            <button
+              type="button"
+              data-testid="html-layout-redo"
+              title="重做（Ctrl+Shift+Z / Ctrl+Y）"
+              :disabled="!historyState.canRedo || historyRestoring || addingImage || applying"
+              @click="redoLayout"
+            >
+              重做
+            </button>
+          </div>
           <button
             type="button"
             aria-label="关闭 HTML 编辑"
@@ -162,7 +182,7 @@
                 type="button"
                 data-testid="html-layout-add-image"
                 :disabled="addingImage || applying || !layout?.rootContainer"
-                @click="addImage()"
+                @click="editWithHistory(() => addImage())"
               >
                 {{ addingImage ? '正在添加…' : '添加图片' }}
               </button>
@@ -170,7 +190,7 @@
                 type="button"
                 data-testid="html-layout-delete-image"
                 :disabled="addingImage || applying || selected?.kind !== 'image'"
-                @click="deleteImage"
+                @click="editWithHistory(deleteImage)"
               >
                 删除图片
               </button>
@@ -180,7 +200,7 @@
               class="html-layout-select-container"
               data-testid="html-layout-clipboard-image"
               :disabled="addingImage || applying || !layout?.rootContainer"
-              @click="addImage('clipboard')"
+              @click="editWithHistory(() => addImage('clipboard'))"
             >
               从剪贴板添加（Ctrl+V）
             </button>
@@ -189,7 +209,7 @@
                 type="button"
                 data-testid="html-layout-add-text"
                 :disabled="addingImage || applying || !layout?.rootContainer"
-                @click="addText"
+                @click="editWithHistory(addText)"
               >
                 添加文字
               </button>
@@ -197,7 +217,7 @@
                 type="button"
                 data-testid="html-layout-delete-text"
                 :disabled="addingImage || applying || selected?.kind !== 'text' || selectedId === layout?.rootTargetId"
-                @click="deleteText"
+                @click="editWithHistory(deleteText)"
               >
                 删除文字框
               </button>
@@ -244,7 +264,7 @@
                     :min="selected.kind === 'image' ? 1 : 24"
                     :max="canvasWidth"
                     :readonly="isRootContainerSelected"
-                    @change="setDimension('width', $event)"
+                    @change="editWithHistory(() => setDimension('width', $event))"
                   >
                 </label>
                 <label class="html-layout-field">
@@ -255,7 +275,7 @@
                     :value="dimensions.height"
                     :min="selected.kind === 'image' ? 1 : 24"
                     max="6000"
-                    @change="setDimension('height', $event)"
+                    @change="editWithHistory(() => setDimension('height', $event))"
                   >
                 </label>
               </div>
@@ -264,7 +284,7 @@
                 type="button"
                 class="html-layout-fit-container"
                 data-testid="html-layout-fit-bottom"
-                @click="fitContainer"
+                @click="editWithHistory(fitContainer)"
               >
                 收起底部空白
               </button>
@@ -282,7 +302,7 @@
                   type="button"
                   data-testid="html-layout-previous"
                   :disabled="!selected.canMovePrevious"
-                  @click="reorder('previous')"
+                  @click="editWithHistory(() => reorder('previous'))"
                 >
                   向前排列
                 </button>
@@ -290,7 +310,7 @@
                   type="button"
                   data-testid="html-layout-next"
                   :disabled="!selected.canMoveNext"
-                  @click="reorder('next')"
+                  @click="editWithHistory(() => reorder('next'))"
                 >
                   向后排列
                 </button>
@@ -304,7 +324,7 @@
                   data-testid="html-layout-text"
                   :value="selectedText"
                   rows="3"
-                  @input="setText"
+                  @input="editWithHistory(() => setText($event), `text:${selectedId}`)"
                 />
               </label>
               <div
@@ -319,8 +339,8 @@
                     :value="textAppearance.fontSize"
                     min="8"
                     max="200"
-                    @input="setFontSize"
-                    @change="setFontSize"
+                    @input="editWithHistory(() => setFontSize($event), `font:${selectedId}`)"
+                    @change="editWithHistory(() => setFontSize($event), `font:${selectedId}`)"
                   >
                 </label>
                 <label class="html-layout-field">
@@ -330,14 +350,14 @@
                     type="color"
                     :value="textAppearance.color"
                     aria-label="文字颜色"
-                    @input="setTextColor"
+                    @input="editWithHistory(() => setTextColor($event), `color:${selectedId}`)"
                   >
                 </label>
               </div>
               <button
                 v-if="edits.has(selectedId)"
                 type="button"
-                @click="resetSelected"
+                @click="editWithHistory(resetSelected)"
               >
                 还原此对象
               </button>
@@ -352,11 +372,12 @@
         </div>
         <textarea
           v-show="mode === 'source'"
-          v-model="sourceText"
+          :value="sourceText"
           class="html-layout-source"
           data-testid="html-layout-source"
           spellcheck="false"
           aria-label="HTML 源码"
+          @input="setSourceText"
         />
         <p
           v-if="error"
@@ -398,6 +419,8 @@ import { applyHtmlLayoutEdits, createHtmlLayoutDocument, reorderHtmlLayoutTarget
 import { isResponsiveHtmlLayoutContainer, prepareResponsiveHtmlLayoutPreview, responsiveHtmlLayoutImageRectangle, responsiveHtmlLayoutLength, serializeResponsiveHtmlLayout } from '@/util/htmlLayoutResponsive'
 import { clampHtmlLayoutImageOffset, fitHtmlLayoutImageSize, placeHtmlLayoutImage } from '@/util/htmlLayoutBounds'
 import { findHtmlLayoutImageOverlaps } from '@/util/htmlLayoutValidation'
+import { preserveHtmlLayoutGeometry } from '@/util/htmlLayoutGeometry'
+import { HtmlLayoutHistory } from '@/util/htmlLayoutHistory'
 import { previewHtmlLayoutImageSnap, type HtmlLayoutSnapGuide, type HtmlLayoutSnapImage } from '@/util/htmlLayoutSnapping'
 import { askImageRemoval } from '@/util/imageOperationDialog'
 
@@ -456,7 +479,8 @@ let widthRefreshRequested = false
 const containerMedia = new Map<string, { width: number; height: number; media: { element: HTMLElement; width: number; height: number }[] }>()
 const frozenGroups = new Map<string, Map<string, HtmlLayoutEdit | undefined>>()
 const pinnedImageBaselines = new Map<string, { edits: Map<string, HtmlLayoutEdit>; imageEditing: boolean }>()
-let imageRootLock: { id: string; original: HtmlLayoutEdit | undefined; generated: HtmlLayoutEdit } | null = null
+type ImageRootLock = { id: string; original: HtmlLayoutEdit | undefined; generated: HtmlLayoutEdit }
+let imageRootLock: ImageRootLock | null = null
 let validationCanvas: { frame: LayoutFrame; scrollLeft: number; scrollTop: number } | null = null
 type ImageScene = {
   root: HTMLElement
@@ -484,6 +508,112 @@ let pointerSession: {
   moved: boolean
   imageScene?: ImageScene
 } | null = null
+
+type DraftSnapshot = {
+  html: string
+  sourceText: string
+  mode: 'visual' | 'source'
+  selectedId: string
+  focus: string | null
+  edits: HtmlLayoutEdit[]
+  groups: [string, [string, HtmlLayoutEdit | undefined][]][]
+  baselines: [string, { edits: HtmlLayoutEdit[]; imageEditing: boolean }][]
+  rootLock: ImageRootLock | null
+  removed: string[]
+  linksOnly: string[]
+}
+const draftHistory = new HtmlLayoutHistory<DraftSnapshot>(state => JSON.stringify([
+  state.html, state.mode === 'source' ? state.sourceText : '', state.edits, state.removed, state.linksOnly
+]))
+const historyState = reactive({ canUndo: false, canRedo: false })
+const historyRestoring = ref(false)
+let pointerHistory: DraftSnapshot | null = null
+
+function captureDraft (): DraftSnapshot {
+  return {
+    html: layout.value?.source ?? sourceText.value,
+    sourceText: sourceText.value,
+    mode: mode.value,
+    selectedId: selectedId.value,
+    focus: document.activeElement?.getAttribute('data-testid') ?? null,
+    edits: [...edits.values()].map(edit => ({ ...edit })),
+    groups: [...frozenGroups].map(([id, group]) => [id, [...group].map(([key, edit]) => [key, edit ? { ...edit } : undefined])]),
+    baselines: [...pinnedImageBaselines].map(([id, baseline]) => [id, { edits: [...baseline.edits.values()].map(edit => ({ ...edit })), imageEditing: baseline.imageEditing }]),
+    rootLock: imageRootLock ? { ...imageRootLock, original: imageRootLock.original ? { ...imageRootLock.original } : undefined, generated: { ...imageRootLock.generated } } : null,
+    removed: [...removedImageSources],
+    linksOnly: [...linksOnlyImageSources]
+  }
+}
+
+function syncHistoryState () {
+  historyState.canUndo = draftHistory.canUndo
+  historyState.canRedo = draftHistory.canRedo
+}
+
+function rememberDraft (before: DraftSnapshot, group = '') {
+  if (!historyRestoring.value && visible.value) draftHistory.record(before, captureDraft(), group)
+  syncHistoryState()
+}
+
+async function editWithHistory (action: () => void | Promise<void>, group = '') {
+  if (historyRestoring.value || !visible.value) return
+  endPointer()
+  const activeSession = session
+  const before = captureDraft()
+  try { await action() } catch (cause) {
+    error.value = cause instanceof Error ? cause.message : '未能修改当前布局，请检查对象后重试。'
+  } finally {
+    if (session === activeSession && visible.value) rememberDraft(before, group)
+  }
+}
+
+function setSourceText (event: Event) {
+  if (historyRestoring.value) return
+  const before = captureDraft()
+  sourceText.value = (event.target as HTMLTextAreaElement).value
+  rememberDraft(before, 'source')
+}
+
+async function restoreDraft (state: DraftSnapshot) {
+  const activeSession = session
+  mode.value = state.mode
+  layout.value = createHtmlLayoutDocument(state.html, resolveImageSource)
+  sourceText.value = state.sourceText
+  edits.clear()
+  for (const edit of state.edits) edits.set(edit.id, { ...edit })
+  frozenGroups.clear()
+  for (const [id, group] of state.groups) frozenGroups.set(id, new Map(group.map(([key, edit]) => [key, edit ? { ...edit } : undefined])))
+  pinnedImageBaselines.clear()
+  for (const [id, baseline] of state.baselines) pinnedImageBaselines.set(id, { edits: new Map(baseline.edits.map(edit => [edit.id, { ...edit }])), imageEditing: baseline.imageEditing })
+  imageRootLock = state.rootLock ? { ...state.rootLock, original: state.rootLock.original ? { ...state.rootLock.original } : undefined, generated: { ...state.rootLock.generated } } : null
+  removedImageSources.clear()
+  for (const src of state.removed) removedImageSources.add(src)
+  linksOnlyImageSources.clear()
+  for (const src of state.linksOnly) linksOnlyImageSources.add(src)
+  error.value = ''
+  await nextTick()
+  if (session !== activeSession || !visible.value) return
+  await renderPreview(state.selectedId)
+  const focus = state.focus && dialogRef.value?.querySelector<HTMLElement>(`[data-testid="${state.focus}"]`)
+  ;(focus || dialogRef.value)?.focus({ preventScroll: true })
+}
+
+async function replayHistory (direction: 'undo' | 'redo') {
+  if (!visible.value || historyRestoring.value || addingImage.value || applying.value) return
+  endPointer()
+  const state = draftHistory[direction](captureDraft())
+  if (!state) return
+  historyRestoring.value = true
+  try { await restoreDraft(state) } catch {
+    error.value = '未能恢复这一步布局，请取消后重新打开 HTML 编辑窗口。'
+  } finally {
+    historyRestoring.value = false
+    syncHistoryState()
+  }
+}
+
+function undoLayout () { return replayHistory('undo') }
+function redoLayout () { return replayHistory('redo') }
 
 function resolveImageSource (src: string) {
   const rendered = imageSources.get(src)
@@ -878,6 +1008,9 @@ async function refreshCanvasWidth () {
 
 async function open (payload: IEditHtmlLayoutPayload, dirname = '', imagePicker?: ImagePicker, imageDeleter?: (sources: string[], commit: () => boolean, linksOnly: string[]) => Promise<boolean>, imageReleaser?: (sources: string[]) => Promise<void>) {
   if (visible.value) close()
+  draftHistory.clear()
+  syncHistoryState()
+  historyRestoring.value = false
   session = payload
   pickImage = imagePicker ?? null
   deleteDraftImages = imageDeleter ?? null
@@ -931,7 +1064,8 @@ async function deleteImage () {
   const activeSession = session
   const choice = await askImageRemoval()
   if (choice === 'cancel' || !visible.value || session !== activeSession || html !== flushDraft() || selected.value?.path.join('/') !== path) return
-  const model = createHtmlLayoutDocument(html)
+  const preserved = layout.value && stageRef.value ? preserveHtmlLayoutGeometry(layout.value, stageRef.value, [...edits.values()]) : html
+  const model = createHtmlLayoutDocument(preserved)
   const target = model.targets.find(target => target.kind === 'image' && target.path.join('/') === path)
   if (!target) return
   if (target.src && choice === 'files') removedImageSources.add(target.src)
@@ -1025,7 +1159,8 @@ async function deleteText () {
   if (selected.value?.kind !== 'text' || selectedId.value === layout.value?.rootTargetId || addingImage.value || applying.value) return
   endPointer()
   const path = selected.value.path.join('/')
-  const model = createHtmlLayoutDocument(flushDraft())
+  const html = layout.value && stageRef.value ? preserveHtmlLayoutGeometry(layout.value, stageRef.value, [...edits.values()]) : flushDraft()
+  const model = createHtmlLayoutDocument(html)
   const target = model.targets.find(target => target.kind === 'text' && target.path.join('/') === path)
   if (!target) return
   error.value = ''
@@ -1038,7 +1173,7 @@ function handlePaste (event: ClipboardEvent) {
   event.preventDefault()
   event.stopPropagation()
   const image = [...(event.clipboardData?.files ?? [])].find(file => file.type.startsWith('image/'))
-  addImage(image || 'clipboard').catch(() => { error.value = '添加图片失败，请重新打开图片编辑窗口。' })
+  editWithHistory(() => addImage(image || 'clipboard')).catch(() => { error.value = '添加图片失败，请重新打开图片编辑窗口。' })
 }
 
 function reloadImages () {
@@ -1091,7 +1226,7 @@ function fitContainer () {
 }
 
 function startMove (event: PointerEvent) {
-  if (event.button !== 0 || !layout.value) return
+  if (event.button !== 0 || !layout.value || historyRestoring.value) return
   event.preventDefault()
   event.stopPropagation()
   endPointer()
@@ -1113,7 +1248,7 @@ function startMove (event: PointerEvent) {
 }
 
 function startResize (event: PointerEvent, operation: 'resize' | 'resize-top' | 'resize-bottom' = 'resize') {
-  if (event.button !== 0 || !selected.value) return
+  if (event.button !== 0 || !selected.value || historyRestoring.value) return
   event.preventDefault()
   event.stopPropagation()
   endPointer()
@@ -1127,6 +1262,7 @@ function beginPointer (event: PointerEvent, operation: 'move' | 'resize' | 'resi
   const rect = element.getBoundingClientRect()
   const stageRect = stage.getBoundingClientRect()
   const edit = edits.get(selectedId.value)
+  pointerHistory = captureDraft()
   pointerSession = {
     pointerId: event.pointerId,
     operation,
@@ -1531,6 +1667,8 @@ function cancelPointer (event: PointerEvent) {
 }
 
 function endPointer () {
+  const before = pointerHistory
+  pointerHistory = null
   const scene = pointerSession?.imageScene
   clearSnapGuides()
   pointerSession = null
@@ -1539,6 +1677,7 @@ function endPointer () {
   window.removeEventListener('pointercancel', cancelPointer, { capture: true })
   window.removeEventListener('blur', endPointer, { capture: true })
   if (scene && imageSceneUnchanged(scene)) scene.rollback()
+  if (before) rememberDraft(before)
 }
 
 function setDimension (dimension: 'width' | 'height', event: Event) {
@@ -1680,6 +1819,7 @@ async function reorder (direction: 'previous' | 'next') {
 async function changeMode (nextMode: 'visual' | 'source') {
   if (mode.value === nextMode) return
   endPointer()
+  draftHistory.breakGroup()
   if (nextMode === 'source') {
     flushDraft()
     rememberValidationCanvas()
@@ -1865,6 +2005,8 @@ function close () {
   widthObserver = null
   widthRefreshRequested = false
   visible.value = false
+  draftHistory.clear()
+  syncHistoryState()
   frozenGroups.clear()
   pinnedImageBaselines.clear()
   imageRootLock = null
@@ -1884,6 +2026,15 @@ function close () {
 
 function handleKeydown (event: KeyboardEvent) {
   event.stopPropagation()
+  if (!event.isComposing && (event.ctrlKey || event.metaKey) && !event.altKey) {
+    const key = event.key.toLowerCase()
+    if (key === 'z' || key === 'y') {
+      event.preventDefault()
+      if (key === 'y' || event.shiftKey) redoLayout()
+      else undoLayout()
+      return
+    }
+  }
   if (event.key === 'Alt') clearSnapGuides()
   if (event.key === 'Escape') {
     event.preventDefault()
@@ -1912,7 +2063,7 @@ onBeforeUnmount(() => {
   widthObserver?.disconnect()
 })
 
-defineExpose({ open, close, reloadImages })
+defineExpose({ open, close, reloadImages, undo: undoLayout, redo: redoLayout })
 </script>
 
 <style>

@@ -18,6 +18,9 @@
 - Selection, dragging, resizing, source mode, Apply/Cancel, restore and undo must remain consistent for images and text.
 - Adding text must select the new object and focus the existing text-content field. Deleting text removes only that object, never its frame or image siblings.
 - New text must not move or distort existing images. Existing image overlap validation and file cleanup remain image-specific.
+- The modal owns an independent bounded draft history. Route both DOM Ctrl/Cmd+Z shortcuts and application-menu undo/redo to it while open; an empty modal history must never fall through to background-document undo. Keep the final Apply as one document transaction.
+- Gesture history is recorded once on release. Group short typing bursts by field, keep separate style/structural actions, and invalidate redo when a new edit branches from undo.
+- Structural deletion freezes the measured frame, complete caption columns and surviving leaf boxes before removing source. Normal flex/grid reflow must not change surviving objects. Nested image-containing spans can be complete column containers.
 
 ## Verification
 
@@ -39,6 +42,8 @@ Use Vitest for source preservation, escaping, empty/multiline text, style valida
 | Color edit | Accept a six-digit hexadecimal color; reject CSS declaration injection. |
 | Text styles on an image | Reject without modifying source. |
 | Rich markup | Preserve child markup; whole-object style editing is allowed, plain content replacement remains guarded. |
+| Structural delete before an image has measurable dimensions | Leave source intact and show the loading/size error; never freeze guessed image boxes. |
+| Rotated/scaled source objects | Preserve author transforms and offer source editing instead of resetting them to guessed rectangles. |
 
 Good: a new span inside a paragraph image frame remains within one CommonMark block. Bad: inserting a nested paragraph or literal blank source lines can close/split the frame.
 
@@ -53,3 +58,5 @@ Good: a new span inside a paragraph image frame remains within one CommonMark bl
 ## Regression coverage
 
 `html-layout-text-actions.spec.ts` covers escaped insertion, newline preservation, empty objects, existing styles, malformed style inputs and exact deletion. `html-layout-text-boxes.spec.ts` covers real selection/focus, font/color preview, dragging, source-mode round trip, existing important colors, Cancel, undo and save/reopen with a fresh profile.
+
+`html-layout-history.spec.ts` covers draft shortcuts, menu routing, source edits, image geometry transactions and caption deletion in a bottom-aligned flex row through Apply/reopen. Preview sanitization deliberately strips ordinary source data attributes; select test objects through stable fixture IDs or their structure, not an attribute that exists only in saved source.

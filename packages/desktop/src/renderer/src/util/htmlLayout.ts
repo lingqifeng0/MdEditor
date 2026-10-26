@@ -268,7 +268,8 @@ const parseLayout = (source: string) => {
     })
   }
   const containerTagAllowed = (element: Element): boolean => CONTAINER_TAGS.has(element.tagName.toLowerCase()) ||
-    (element.tagName === 'P' && leaves.some(leaf => leaf.tagName === 'IMG' && element.contains(leaf)))
+    ((element.tagName === 'P' || (element.tagName === 'SPAN' && element.parentNode !== template.content)) &&
+      leaves.some(leaf => leaf.tagName === 'IMG' && element.contains(leaf)))
   const containers = Array.from(elements.values()).filter(element =>
     containerTagAllowed(element) && isVisible(element) && !leaves.includes(element) &&
     (leaves.some(leaf => element.contains(leaf)) || (element.parentNode === template.content && !element.children.length && !element.textContent?.trim())) && completeContainer(element)

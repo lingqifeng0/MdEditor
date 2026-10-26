@@ -5,6 +5,8 @@ directories:
   buildResources: build
   output: ../../dist
 files:
+  - out/**
+  - package.json
   - '!**/.vscode/*'
   - '!src/*'
   - '!scripts/*'
@@ -35,6 +37,8 @@ files:
   - '!node_modules/**/build/Release/{*.lib,*.exp,*.ilk,*.pdb,*.iobj,*.ipdb}'
   - '!node_modules/**/build/Release/obj'
   # Do not bundle development related files
+  - '!node_modules/**/{test,tests,__tests__,test-results,e2e,examples}/**'
+  - '!node_modules/**/{playwright.config.*,vitest.config.*,tsconfig*.json,*.tsbuildinfo}'
   - '!eslint.config.js'
   - '!jsconfig.json'
   - '!docs/*'

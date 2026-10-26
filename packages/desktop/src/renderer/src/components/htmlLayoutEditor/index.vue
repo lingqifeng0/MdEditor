@@ -184,6 +184,24 @@
             >
               从剪贴板添加（Ctrl+V）
             </button>
+            <div class="html-layout-order">
+              <button
+                type="button"
+                data-testid="html-layout-add-text"
+                :disabled="addingImage || applying || !layout?.rootContainer"
+                @click="addText"
+              >
+                添加文字
+              </button>
+              <button
+                type="button"
+                data-testid="html-layout-delete-text"
+                :disabled="addingImage || applying || selected?.kind !== 'text' || selectedId === layout?.rootTargetId"
+                @click="deleteText"
+              >
+                删除文字框
+              </button>
+            </div>
             <label class="html-layout-check">
               <input
                 v-model="snapEnabled"
@@ -285,10 +303,37 @@
                 <textarea
                   data-testid="html-layout-text"
                   :value="selectedText"
-                  rows="5"
+                  rows="3"
                   @input="setText"
                 />
               </label>
+              <div
+                v-if="selected.kind === 'text'"
+                class="html-layout-size-fields"
+              >
+                <label class="html-layout-field">
+                  字号（px）
+                  <input
+                    data-testid="html-layout-font-size"
+                    type="number"
+                    :value="textAppearance.fontSize"
+                    min="8"
+                    max="200"
+                    @input="setFontSize"
+                    @change="setFontSize"
+                  >
+                </label>
+                <label class="html-layout-field">
+                  文字颜色
+                  <input
+                    data-testid="html-layout-text-color"
+                    type="color"
+                    :value="textAppearance.color"
+                    aria-label="文字颜色"
+                    @input="setTextColor"
+                  >
+                </label>
+              </div>
               <button
                 v-if="edits.has(selectedId)"
                 type="button"
@@ -349,7 +394,7 @@ import { computed, nextTick, onBeforeUnmount, reactive, ref, shallowRef } from '
 import type { IEditHtmlLayoutPayload } from '@muyajs/core'
 import { sanitize, EXPORT_DOMPURIFY_CONFIG } from '@/util/dompurify'
 import { resolveHtmlImageSource } from '@/util/localFileUrl'
-import { applyHtmlLayoutEdits, createHtmlLayoutDocument, reorderHtmlLayoutTarget, appendHtmlLayoutImage, removeHtmlLayoutImage, type HtmlLayoutEdit, type HtmlLayoutTarget } from '@/util/htmlLayout'
+import { applyHtmlLayoutEdits, createHtmlLayoutDocument, reorderHtmlLayoutTarget, appendHtmlLayoutImage, removeHtmlLayoutImage, appendHtmlLayoutText, removeHtmlLayoutText, type HtmlLayoutEdit, type HtmlLayoutTarget } from '@/util/htmlLayout'
 import { isResponsiveHtmlLayoutContainer, prepareResponsiveHtmlLayoutPreview, responsiveHtmlLayoutImageRectangle, responsiveHtmlLayoutLength, serializeResponsiveHtmlLayout } from '@/util/htmlLayoutResponsive'
 import { clampHtmlLayoutImageOffset, fitHtmlLayoutImageSize, placeHtmlLayoutImage } from '@/util/htmlLayoutBounds'
 import { findHtmlLayoutImageOverlaps } from '@/util/htmlLayoutValidation'
@@ -376,6 +421,7 @@ const dialogRef = ref<HTMLElement | null>(null)
 const canvasRef = ref<HTMLElement | null>(null)
 const stageRef = ref<HTMLElement | null>(null)
 const dimensions = reactive({ width: 0, height: 0 })
+const textAppearance = reactive({ fontSize: 16, color: '#000000' })
 type LayoutFrame = { left: number; top: number; width: number; height: number }
 const frame = ref<LayoutFrame | null>(null)
 const outerFrame = ref<LayoutFrame | null>(null)
@@ -501,6 +547,12 @@ function updateSelectionFrame () {
   frame.value = { left: rect.left - container.left, top: rect.top - container.top, width: rect.width, height: rect.height }
   dimensions.width = Math.round(rect.width)
   dimensions.height = Math.round(rect.height)
+  if (selected.value?.kind === 'text') {
+    const style = getComputedStyle(element)
+    textAppearance.fontSize = Math.round(parseFloat(style.fontSize) * 100) / 100 || 16
+    const rgb = /^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/.exec(style.color)
+    if (rgb) textAppearance.color = '#' + rgb.slice(1, 4).map(value => Number(value).toString(16).padStart(2, '0')).join('')
+  }
 }
 
 function containerMinimumHeight (element: HTMLElement) {
@@ -671,6 +723,10 @@ function applyLiveEdit (id: string, preserveBounds = false) {
   if (!element) return
   const edit = edits.get(id)
   if (!edit) return
+  if (target.kind === 'text') {
+    if (edit.fontSize !== undefined) element.style.setProperty('font-size', `${edit.fontSize}px`, 'important')
+    if (edit.color !== undefined) element.style.setProperty('color', edit.color, 'important')
+  }
   if (target.kind === 'container' && (edit.width !== undefined || edit.height !== undefined) && !containerMedia.has(id)) rememberContainerMedia(id, element)
   if (edit.position !== undefined) element.style.setProperty('position', edit.position, 'important')
   if (edit.left !== undefined) element.style.setProperty('left', `${edit.left}px`, 'important')
@@ -906,27 +962,14 @@ async function addImage (source?: File | 'clipboard') {
       bitmap.src = resolveImageSource(image.src)
     })
     if (session !== activeSession || !visible.value || mode.value !== 'visual' || flushDraft() !== originalDraft) return
-    const root = outerElement()
-    const model = layout.value
-    const stage = stageRef.value
-    if (!root || !model?.rootTargetId || !stage) return
-    const rect = root.getBoundingClientRect()
-    const bounds = imageBounds(root)
-    const blockers = visibleImages(root).map(image => {
-      const box = image.getBoundingClientRect()
-      return { left: box.left - bounds.left, top: box.top - bounds.top, width: box.width, height: box.height }
-    })
+    const insertion = prepareObjectInsertion()
+    if (!insertion) return
+    const { model, bounds, blockers } = insertion
     const box = placeHtmlLayoutImage({ width: bitmap.naturalWidth, height: bitmap.naturalHeight }, bounds, blockers)
-    const base = applyHtmlLayoutEdits(model, [
-      ...[...edits.values()].filter(edit => edit.id !== model.rootTargetId),
-      { ...edits.get(model.rootTargetId), id: model.rootTargetId, width: rect.width, height: rect.height, position: 'relative', preservePaddingBottom: true }
-    ], { minimumHeight: minimumHeight() })
-    const frozen = serializeResponsiveHtmlLayout(model, stage, base)
-    const frozenModel = createHtmlLayoutDocument(frozen)
     const length = (value: number, extent: number) => responsiveHtmlLayoutLength(value, extent)
     const css = `position: absolute !important; left: ${length(box.left, bounds.width)} !important; top: ${length(box.top, bounds.height)} !important; width: ${length(box.width, bounds.width)} !important; height: ${length(box.height, bounds.height)} !important; margin: 0 !important; padding: 0 !important; border: 0 !important; box-sizing: border-box !important; min-width: 0 !important; min-height: 0 !important; max-width: none !important; max-height: none !important; object-fit: contain;`
     // All new positions are relative to the root padding box, whose dimensions exclude its borders.
-    const html = appendHtmlLayoutImage(frozenModel, { ...image, style: css })
+    const html = appendHtmlLayoutImage(model, { ...image, style: css })
     const added = createHtmlLayoutDocument(html).targets.filter(target => target.kind === 'image').at(-1)
     await rebuildPreview(html, added?.id)
   } catch (cause) {
@@ -936,8 +979,62 @@ async function addImage (source?: File | 'clipboard') {
   }
 }
 
+function prepareObjectInsertion () {
+  const root = outerElement()
+  const model = layout.value
+  const stage = stageRef.value
+  if (!root || !model?.rootTargetId || !stage) return
+  const rect = root.getBoundingClientRect()
+  const bounds = imageBounds(root)
+  const blockers = model.targets.filter(target => target.kind !== 'container').flatMap(target => {
+    const element = stage.querySelector<HTMLElement>(`[${model.markerAttribute}="${target.id}"]`)
+    if (!element) return []
+    const box = element.getBoundingClientRect()
+    return [{ left: box.left - bounds.left, top: box.top - bounds.top, width: box.width, height: box.height }]
+  })
+  const base = applyHtmlLayoutEdits(model, [
+    ...[...edits.values()].filter(edit => edit.id !== model.rootTargetId),
+    { ...edits.get(model.rootTargetId), id: model.rootTargetId, width: rect.width, height: rect.height, position: 'relative', preservePaddingBottom: true }
+  ], { minimumHeight: minimumHeight() })
+  return { model: createHtmlLayoutDocument(serializeResponsiveHtmlLayout(model, stage, base)), bounds, blockers }
+}
+
+async function addText () {
+  if (addingImage.value || applying.value || !layout.value?.rootContainer) return
+  endPointer()
+  error.value = ''
+  try {
+    const insertion = prepareObjectInsertion()
+    if (!insertion) return
+    const { model, bounds, blockers } = insertion
+    const box = placeHtmlLayoutImage({ width: 200, height: 32 }, bounds, blockers)
+    const length = (value: number, extent: number) => responsiveHtmlLayoutLength(value, extent)
+    const style = `position: absolute; left: ${length(box.left, bounds.width)}; top: ${length(box.top, bounds.height)}; width: ${length(box.width, bounds.width)}; margin: 0; padding: 0; border: 0; box-sizing: border-box;`
+    const html = appendHtmlLayoutText(model, { text: '新文字', style })
+    const added = createHtmlLayoutDocument(html).targets.filter(target => target.kind === 'text').at(-1)
+    await rebuildPreview(html, added?.id)
+    const input = dialogRef.value?.querySelector<HTMLTextAreaElement>('[data-testid="html-layout-text"]')
+    input?.focus({ preventScroll: true })
+    input?.select()
+  } catch (cause) {
+    error.value = cause instanceof Error ? cause.message : '添加文字失败，请检查 HTML 外框。'
+  }
+}
+
+async function deleteText () {
+  if (selected.value?.kind !== 'text' || selectedId.value === layout.value?.rootTargetId || addingImage.value || applying.value) return
+  endPointer()
+  const path = selected.value.path.join('/')
+  const model = createHtmlLayoutDocument(flushDraft())
+  const target = model.targets.find(target => target.kind === 'text' && target.path.join('/') === path)
+  if (!target) return
+  error.value = ''
+  await rebuildPreview(removeHtmlLayoutText(model, target.id))
+}
+
 function handlePaste (event: ClipboardEvent) {
   if (mode.value !== 'visual' || !visible.value) return
+  if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return
   event.preventDefault()
   event.stopPropagation()
   const image = [...(event.clipboardData?.files ?? [])].find(file => file.type.startsWith('image/'))
@@ -1491,6 +1588,29 @@ function setText (event: Event) {
   applyLiveEdit(selectedId.value)
 }
 
+function setFontSize (event: Event) {
+  if (selected.value?.kind !== 'text') return
+  const input = event.target as HTMLInputElement
+  const value = Number(input.value)
+  if (!Number.isFinite(value) || !input.value.trim()) {
+    if (event.type === 'change') input.value = String(textAppearance.fontSize)
+    return
+  }
+  if (event.type === 'input' && (value <= 0 || value > 200)) return
+  const fontSize = event.type === 'input' ? value : Math.max(8, Math.min(200, value))
+  edits.set(selectedId.value, { ...edits.get(selectedId.value), id: selectedId.value, fontSize })
+  applyLiveEdit(selectedId.value)
+  if (event.type === 'change') input.value = String(fontSize)
+}
+
+function setTextColor (event: Event) {
+  if (selected.value?.kind !== 'text') return
+  const color = (event.target as HTMLInputElement).value
+  if (!/^#[\da-f]{6}$/i.test(color)) return
+  edits.set(selectedId.value, { ...edits.get(selectedId.value), id: selectedId.value, color })
+  applyLiveEdit(selectedId.value)
+}
+
 async function resetSelected () {
   endPointer()
   for (const [id, originalEdits] of frozenGroups) {
@@ -1877,6 +1997,7 @@ defineExpose({ open, close, reloadImages })
 .html-layout-field select,
 .html-layout-field textarea { width: 100%; padding: 7px; min-width: 0; }
 .html-layout-field textarea { resize: vertical; }
+.html-layout-field input[type="color"] { height: 36px; padding: 3px; cursor: pointer; }
 .html-layout-size-fields { display: flex; gap: 10px; }
 .html-layout-size-fields .html-layout-field { width: 50%; }
 .html-layout-check { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-bottom: 18px; }

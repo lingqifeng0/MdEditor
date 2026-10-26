@@ -6,7 +6,7 @@
 
 基于 [MarkText](https://github.com/marktext/marktext) 的本地 Markdown 编辑器定制版，重点改进文字工具栏、悬浮目录、图片与 HTML 布局，以及插件扩展。直接打开和保存 `.md` 文件，保留所见即所得、源码模式、数学公式、代码块和主题等原有能力。
 
-当前主程序版本：**`0.31.0-toolbar.v8.31`**。独立视频回看插件：**`0.2.5`**。本次版本以 **Windows x64** 为主要验证平台。
+当前开发预览版本：**`0.31.0-toolbar.v8.32`**，新增 HTML 文字框；GitHub 已发布稳定版仍为 **v8.31**。独立视频回看插件保持 **`0.2.5`**。本次版本以 **Windows x64** 为主要验证平台。
 
 ## 下载
 
@@ -55,6 +55,10 @@
 - 图片删除区分删除链接、删除文件等操作，减少正文和磁盘图片状态不一致的问题。
 
 ![HTML 可视布局中的图片选择、缩放与整体外框](docs/assets/screenshots/html-layout.png)
+
+v8.32 在右侧增加 **添加文字** 和 **删除文字框**。新增后自动选中并进入文字输入，可拖动、调整宽高，并对整个文字框统一设置字号与颜色。已有文字对象也可调整样式；空文字框、多行内容和特殊字符可以保存在 HTML 中，支持取消、应用、撤销及保存后重新打开。
+
+![HTML 布局新增文字框与整框字号、颜色设置](docs/assets/screenshots/html-text-boxes.png)
 
 ### 本地附件右键定位
 
@@ -163,6 +167,12 @@ node --test independent-plugins/video-study/test/*.test.cjs
 视频插件还需要 Windows .NET Framework C# 编译器来生成它自己的进程身份检查程序。产物位于 `independent-plugins/video-study/dist/`；将 `local.video-study-0.2.5.mtplug` 导入编辑器并启用后，在插件设置里选择你使用的播放器 `.exe`。支持 FrameFlow、mpv.net 和兼容 mpv JSON IPC 的播放器，程序文件名可以自定义。
 
 示例插件安装包生成到 `dist/plugins/`。
+
+## 项目开发流程
+
+项目已接入 Trellis，开发规范位于 `.trellis/spec/`，需求、已确认设计和验收记录位于 `.trellis/tasks/`。入口说明见 [Trellis 开发流程](.trellis/README.md)。主程序与独立插件的职责分开记录，涉及插件设计或模块边界调整时，先说明方案并获得确认。
+
+Trellis 用于开发管理，相关脚本和会话记录不进入应用运行包。当前采用 Codex inline 流程，保留原有 AGENTS.md 约定，使用临时配置和生成的笔记验收。
 
 详细接口见 [插件 SDK 文档](docs/plugins/README.md)，播放器配置与通信说明见 [视频回看插件说明](independent-plugins/video-study/README.md)。
 

@@ -29,6 +29,8 @@ export interface HtmlLayoutEdit {
   offsetX?: number
   offsetY?: number
   text?: string
+  fontSize?: number
+  color?: string
   clearPaddingTop?: boolean
   position?: 'relative' | 'absolute'
   left?: number
@@ -246,7 +248,7 @@ const parseLayout = (source: string) => {
   const candidates = Array.from(elements.values()).filter(element => {
     if (!isVisible(element)) return false
     const tagName = element.tagName.toLowerCase()
-    return tagName === 'img' || (TEXT_TAGS.has(tagName) && !!visibleText(element).trim())
+    return tagName === 'img' || (TEXT_TAGS.has(tagName) && (!!visibleText(element).trim() || element.hasAttribute('data-mt-textbox')))
   })
   const leaves = candidates.filter(element => !candidates.some(child => child !== element && element.contains(child)))
   const completeContainer = (element: Element): boolean => {
@@ -293,7 +295,7 @@ const parseLayout = (source: string) => {
       tagName,
       label: (container
         ? `${tagName}${element.id ? `#${element.id}` : ''}${element.className ? `.${element.className.trim().replace(/\s+/g, '.')}` : ''}`
-        : tagName === 'img' ? element.getAttribute('alt') || element.getAttribute('src') || 'img' : visibleText(element)).trim().replace(/\s+/g, ' ').slice(0, 100),
+        : tagName === 'img' ? element.getAttribute('alt') || element.getAttribute('src') || 'img' : visibleText(element) || '文字框').trim().replace(/\s+/g, ' ').slice(0, 100),
       text,
       textEditable: !container && tagName !== 'img' && hasPlainTextSource(source, record, text) &&
         Array.from(element.childNodes).every(node => node.nodeType === Node.TEXT_NODE),
@@ -346,7 +348,7 @@ const escapeAttribute = (value: string, quote: string): string =>
   value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(quote === "'" ? /'/g : /"/g, quote === "'" ? '&#39;' : '&quot;')
 
 const escapeText = (value: string): string =>
-  value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\r\n|\r|\n/g, '&#10;')
 
 const pixels = (value: number, positive = false): string => {
   if (!Number.isFinite(value) || (positive && value <= 0)) throw new Error('Invalid layout size or offset.')
@@ -382,6 +384,14 @@ export const applyHtmlLayoutEdits = (
     const record = parsed.recordById.get(edit.id)
     const element = parsed.elements.get(edit.id)
     if (!target || !record || !element) throw new Error('The HTML layout target is no longer available.')
+    if (edit.fontSize !== undefined || edit.color !== undefined) {
+      if (target.kind !== 'text') throw new Error('Only text objects can have text styles.')
+      if (edit.fontSize !== undefined) setStyle(edit.id, element, 'font-size', pixels(edit.fontSize, true))
+      if (edit.color !== undefined) {
+        if (!/^#[\da-f]{6}$/i.test(edit.color)) throw new Error('Invalid text color.')
+        setStyle(edit.id, element, 'color', edit.color)
+      }
+    }
     if (edit.position !== undefined) {
       if (!['relative', 'absolute'].includes(edit.position)) throw new Error('Invalid layout position.')
       setStyle(edit.id, element, 'position', edit.position)
@@ -482,9 +492,9 @@ export const reorderHtmlLayoutTarget = (
   ])
 }
 
-export const removeHtmlLayoutImage = (model: HtmlLayoutDocument, id: string): string => {
+const removeHtmlLayoutObject = (model: HtmlLayoutDocument, id: string, kind: 'image' | 'text'): string => {
   const parsed = parseLayout(model.source)
-  if (parsed.targets.find(target => target.id === id)?.kind !== 'image') return model.source
+  if (parsed.targets.find(target => target.id === id)?.kind !== kind || (kind === 'text' && id === parsed.rootId)) return model.source
   const record = parsed.recordById.get(id)
   if (!record?.completeEnd) return model.source
   const lineStart = model.source.lastIndexOf('\n', record.start - 1) + 1
@@ -493,14 +503,17 @@ export const removeHtmlLayoutImage = (model: HtmlLayoutDocument, id: string): st
   return applyPatches(model.source, [{ start: standalone ? lineStart : record.start, end: record.completeEnd + (standalone ? trailing[0].length : 0), value: '' }])
 }
 
-export const appendHtmlLayoutImage = (model: HtmlLayoutDocument, image: { src: string; alt: string; style: string }): string => {
+export const removeHtmlLayoutImage = (model: HtmlLayoutDocument, id: string): string => removeHtmlLayoutObject(model, id, 'image')
+
+export const removeHtmlLayoutText = (model: HtmlLayoutDocument, id: string): string => removeHtmlLayoutObject(model, id, 'text')
+
+const appendHtmlLayoutObject = (model: HtmlLayoutDocument, markup: string): string => {
   const parsed = parseLayout(model.source)
   const root = parsed.rootId ? parsed.elements.get(parsed.rootId) : undefined
   const record = parsed.rootId ? parsed.recordById.get(parsed.rootId) : undefined
   if (!parsed.rootContainer || !root || !record || record.contentEnd === null || !['DIV', 'SECTION', 'FIGURE', 'ARTICLE', 'P'].includes(root.tagName)) {
-    throw new Error('请先把图片放在完整的 div、section、figure 或 article 外框中。')
+    throw new Error('请先把内容放在完整的 div、section、figure 或 article 外框中。')
   }
-  const attribute = (value: string) => escapeAttribute(value, '"')
   // A blank line ends a CommonMark HTML block, splitting the new image from its outer frame on reopen.
   const lineStart = model.source.lastIndexOf('\n', record.contentEnd - 1) + 1
   const closingIndent = model.source.slice(lineStart, record.contentEnd)
@@ -511,6 +524,14 @@ export const appendHtmlLayoutImage = (model: HtmlLayoutDocument, image: { src: s
   return applyPatches(model.source, [{
     start: insertion,
     end: insertion,
-    value: `${separator}${indent}<img src="${attribute(image.src)}" alt="${attribute(image.alt)}" style="${attribute(image.style)}">${newline}`
+    value: `${separator}${indent}${markup}${newline}`
   }])
+}
+
+export const appendHtmlLayoutImage = (model: HtmlLayoutDocument, image: { src: string; alt: string; style: string }): string =>
+  appendHtmlLayoutObject(model, `<img src="${escapeAttribute(image.src, '"')}" alt="${escapeAttribute(image.alt, '"')}" style="${escapeAttribute(image.style, '"')}">`)
+
+export const appendHtmlLayoutText = (model: HtmlLayoutDocument, text: { text: string; style?: string }): string => {
+  const style = 'display: inline-block; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 16px; line-height: 1.5; min-height: 1.5em; ' + (text.style ?? '')
+  return appendHtmlLayoutObject(model, `<span data-mt-textbox="true" style="${escapeAttribute(style, '"')}">${escapeText(text.text)}</span>`)
 }

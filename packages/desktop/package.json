@@ -1,8 +1,8 @@
 {
   "name": "marktext",
-  "version": "0.31.0-toolbar.v8.31",
+  "version": "0.31.0-toolbar.v8.32",
   "productName": "MdEditor",
-  "description": "MdEditor v8.31",
+  "description": "MdEditor v8.32",
   "main": "./out/main/index.js",
   "author": {
     "name": "Jocs",

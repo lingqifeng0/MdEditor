@@ -1,0 +1,31 @@
+{
+  "id": "html-layout-text-boxes",
+  "name": "html-layout-text-boxes",
+  "title": "HTML 布局编辑器添加文字框、字号与颜色",
+  "description": "",
+  "status": "in_progress",
+  "dev_type": "frontend",
+  "scope": "html-layout",
+  "package": "marktext",
+  "priority": "P2",
+  "creator": "lingqifeng0",
+  "assignee": "lingqifeng0",
+  "createdAt": "2026-10-26",
+  "completedAt": null,
+  "branch": "main",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "packages/desktop/src/renderer/src/components/htmlLayoutEditor/index.vue",
+    "packages/desktop/src/renderer/src/util/htmlLayout.ts",
+    "packages/desktop/test/unit/specs/html-layout-text-actions.spec.ts",
+    "packages/desktop/test/e2e/html-layout-text-boxes.spec.ts"
+  ],
+  "notes": "",
+  "meta": {}
+}

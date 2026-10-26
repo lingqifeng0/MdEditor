@@ -21,3 +21,8 @@ MdEditor is a MarkText-based Electron and Vue Markdown editor. The desktop works
 - Test with disposable profiles and fixtures. Do not change users' installed software, plugins, notes or configuration during verification.
 - Commit source, necessary assets, tests and documentation. Do not commit dependencies, generated bundles, installers, personal data, credentials or local validation output.
 - Preserve the MIT license and upstream copyright notices.
+- Before changing plugin design, responsibilities or module boundaries, explain the proposal and obtain the user's confirmation. An approved implementation can proceed within that scope.
+
+## Trellis
+
+Project development is managed by Trellis. Start with `.trellis/workflow.md` and the relevant index under `.trellis/spec/`. Keep requirements, confirmed decisions and verification results in the task directory. Codex uses the inline workflow; Trellis is development tooling and must not become an application runtime dependency.

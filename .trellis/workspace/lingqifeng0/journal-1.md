@@ -88,3 +88,37 @@ Delivered the local MdEditor repair preview with independent HTML modal undo/red
 ### Next Steps
 
 - None - task complete
+
+
+## Session 3: HTML 文字框边界修复与 v8.33 发布
+
+**Date**: 2026-10-27
+**Task**: HTML 文字框边界修复与 v8.33 发布
+**Package**: marktext
+**Branch**: `main`
+
+### Summary
+
+修复 HTML 可视编辑器文字框的定位基准、拖动和缩放边界，新增文字框越界 Electron 回归测试并通过 11 项 HTML 编辑器测试。将主程序版本升至 v8.33，构建并检查 Windows x64 便携包、安装包、MdEditor.exe、app.asar 版本和原生模块；GitHub v8.33 已发布为 latest，v8.31 与 v8.32 保留。打包 EXE 独立 smoke 在 30 秒内未返回窗口，开发目录 Electron 测试全部通过。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c4d1814` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

@@ -494,6 +494,13 @@ type ImageScene = {
   snapImages: HtmlLayoutSnapImage[]
   rollback: () => void
 }
+type TextScene = {
+  root: HTMLElement
+  element: HTMLElement
+  bounds: LayoutFrame
+  rect: DOMRect
+  edit: HtmlLayoutEdit | undefined
+}
 let pointerSession: {
   pointerId: number
   operation: 'move' | 'resize' | 'resize-top' | 'resize-bottom'
@@ -507,6 +514,7 @@ let pointerSession: {
   baseTop: number
   moved: boolean
   imageScene?: ImageScene
+  textScene?: TextScene
 } | null = null
 
 type DraftSnapshot = {
@@ -1439,6 +1447,57 @@ function prepareImageScene (): ImageScene | undefined {
   }
 }
 
+function prepareTextScene (): TextScene | undefined {
+  const root = outerElement()
+  const element = selectedElement()
+  if (!root || !element || selected.value?.kind !== 'text') return
+  const rect = element.getBoundingClientRect()
+  const bounds = imageBounds(root)
+  if (![rect.left, rect.top, rect.width, rect.height, bounds.left, bounds.top, bounds.width, bounds.height]
+    .every(value => Number.isFinite(value)) || rect.width <= 0 || rect.height <= 0 || bounds.width <= 0 || bounds.height <= 0) {
+    error.value = '文字框尚未有可用尺寸，请先设置文字框内容或大小。'
+    return
+  }
+  return { root, element, bounds, rect, edit: edits.get(selectedId.value) ? { ...edits.get(selectedId.value)! } : undefined }
+}
+
+function applyBoundedTextEdit (scene: TextScene, requested: HtmlLayoutEdit, resizing: boolean) {
+  const id = selectedId.value
+  const current = edits.get(id)
+  const candidate: HtmlLayoutEdit = { ...requested, id }
+  const bounds = imageBounds(scene.root)
+  if (resizing) {
+    const currentRect = scene.element.getBoundingClientRect()
+    const available = {
+      width: Math.max(1, bounds.left + bounds.width - Math.max(bounds.left, currentRect.left)),
+      height: Math.max(1, bounds.top + bounds.height - Math.max(bounds.top, currentRect.top))
+    }
+    const fitted = fitHtmlLayoutImageSize({
+      width: candidate.width ?? currentRect.width,
+      height: candidate.height ?? currentRect.height
+    }, available, false)
+    candidate.width = fitted.width
+    candidate.height = fitted.height
+  }
+  edits.set(id, candidate)
+  applyLiveEdit(id)
+  const rect = scene.element.getBoundingClientRect()
+  const offsets = clampHtmlLayoutImageOffset({
+    offsetX: candidate.offsetX ?? current?.offsetX ?? 0,
+    offsetY: candidate.offsetY ?? current?.offsetY ?? 0,
+    left: rect.left,
+    top: rect.top,
+    width: rect.width,
+    height: rect.height
+  }, bounds, 0, 0)
+  if (Math.abs(offsets.offsetX - (candidate.offsetX ?? 0)) > 0.001 || Math.abs(offsets.offsetY - (candidate.offsetY ?? 0)) > 0.001) {
+    candidate.offsetX = offsets.offsetX
+    candidate.offsetY = offsets.offsetY
+    edits.set(id, candidate)
+    applyLiveEdit(id)
+  }
+}
+
 function imageSceneUnchanged (scene: ImageScene) {
   const rect = scene.element.getBoundingClientRect()
   const root = outerElement()
@@ -1592,6 +1651,14 @@ function movePointer (event: PointerEvent) {
     pointer.offsetX = pointer.imageScene.edit?.offsetX ?? 0
     pointer.offsetY = pointer.imageScene.edit?.offsetY ?? 0
   }
+  if (!pointer.moved && selected.value.kind === 'text') {
+    pointer.textScene = prepareTextScene()
+    if (!pointer.textScene) return
+    pointer.width = pointer.textScene.rect.width
+    pointer.height = pointer.textScene.rect.height
+    pointer.offsetX = pointer.textScene.edit?.offsetX ?? 0
+    pointer.offsetY = pointer.textScene.edit?.offsetY ?? 0
+  }
   pointer.moved = true
   const edit: HtmlLayoutEdit = { ...edits.get(selectedId.value), id: selectedId.value }
   if (selected.value.kind === 'image' && pointer.imageScene) {
@@ -1614,6 +1681,28 @@ function movePointer (event: PointerEvent) {
       edit.height = keepRatio.value ? edit.width / imageAspectRatio(pointer.imageScene) : boundedSize(pointer.height + dy)
     }
     applyBoundedImageEdit(pointer.imageScene, edit, pointer.operation !== 'move')
+    return
+  }
+  if (selected.value.kind === 'text' && pointer.textScene) {
+    const scene = pointer.textScene
+    if (pointer.operation === 'move') {
+      const bounds = imageBounds(scene.root)
+      const offsets = clampHtmlLayoutImageOffset({
+        offsetX: pointer.offsetX,
+        offsetY: pointer.offsetY,
+        left: scene.rect.left,
+        top: scene.rect.top,
+        width: scene.rect.width,
+        height: scene.rect.height
+      }, bounds, dx, dy)
+      edit.offsetX = offsets.offsetX
+      edit.offsetY = offsets.offsetY
+      applyBoundedTextEdit(scene, edit, false)
+    } else {
+      edit.width = boundedSize(pointer.width + dx)
+      edit.height = boundedSize(pointer.height + dy)
+      applyBoundedTextEdit(scene, edit, true)
+    }
     return
   }
   if (selected.value.kind === 'container') {

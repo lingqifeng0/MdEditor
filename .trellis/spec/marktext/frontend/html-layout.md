@@ -18,6 +18,7 @@
 - Selection, dragging, resizing, source mode, Apply/Cancel, restore and undo must remain consistent for images and text.
 - Adding text must select the new object and focus the existing text-content field. Deleting text removes only that object, never its frame or image siblings.
 - New text must not move or distort existing images. Existing image overlap validation and file cleanup remain image-specific.
+- New text boxes are absolute-positioned children of the complete HTML frame. The frame must be a positioned containing block, and text drag/resize operations must clamp the rendered text rectangle to the frame's content bounds.
 - The modal owns an independent bounded draft history. Route both DOM Ctrl/Cmd+Z shortcuts and application-menu undo/redo to it while open; an empty modal history must never fall through to background-document undo. Keep the final Apply as one document transaction.
 - Gesture history is recorded once on release. Group short typing bursts by field, keep separate style/structural actions, and invalidate redo when a new edit branches from undo.
 - Structural deletion freezes the measured frame, complete caption columns and surviving leaf boxes before removing source. Normal flex/grid reflow must not change surviving objects. Nested image-containing spans can be complete column containers.

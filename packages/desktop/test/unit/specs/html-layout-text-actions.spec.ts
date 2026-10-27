@@ -14,7 +14,8 @@ describe('HTML layout text objects', () => {
   it.each(['\n', '\r\n'])('adds text without splitting a Markdown HTML frame using %j line endings', newline => {
     const source = `<div data-note='keep' style="height:120px">${newline}<img src="assets/电感.png">${newline}  </div>`
     const result = appendHtmlLayoutText(createHtmlLayoutDocument(source), { text: '屏蔽电感', style: 'position:absolute;left:20px;top:80px' })
-    expect(result).toContain(source.slice(0, source.lastIndexOf(`${newline}  </div>`)))
+    expect(parse(result).querySelector('div')?.getAttribute('data-note')).toBe('keep')
+    expect(parse(result).querySelector('div')?.style.position).toBe('relative')
     expect(result).not.toMatch(/\n[ \t\r]*\n/)
     expect(parse(result).querySelector('img')?.getAttribute('src')).toBe('assets/电感.png')
     expect(parse(result).querySelector('[data-mt-textbox]')?.textContent).toBe('屏蔽电感')

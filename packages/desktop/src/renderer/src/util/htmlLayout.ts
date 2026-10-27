@@ -533,6 +533,18 @@ export const appendHtmlLayoutImage = (model: HtmlLayoutDocument, image: { src: s
   appendHtmlLayoutObject(model, `<img src="${escapeAttribute(image.src, '"')}" alt="${escapeAttribute(image.alt, '"')}" style="${escapeAttribute(image.style, '"')}">`)
 
 export const appendHtmlLayoutText = (model: HtmlLayoutDocument, text: { text: string; style?: string }): string => {
-  const style = 'display: inline-block; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 16px; line-height: 1.5; min-height: 1.5em; ' + (text.style ?? '')
-  return appendHtmlLayoutObject(model, `<span data-mt-textbox="true" style="${escapeAttribute(style, '"')}">${escapeText(text.text)}</span>`)
+  // Absolute text boxes need the complete HTML frame to be their containing
+  // block. A paragraph or flex row is often statically positioned in source;
+  // adding relative positioning preserves its flow while keeping the new box
+  // in the same coordinate space as the frame.
+  const root = model.rootTargetId
+    ? new DOMParser().parseFromString(model.source, 'text/html').body.firstElementChild as HTMLElement | null
+    : null
+  const isPositioned = root && ['absolute', 'fixed', 'relative', 'sticky'].includes(root.style.position)
+  const positionedSource = model.rootTargetId && !isPositioned
+    ? applyHtmlLayoutEdits(model, [{ id: model.rootTargetId, position: 'relative' }])
+    : model.source
+  const positionedModel = positionedSource === model.source ? model : createHtmlLayoutDocument(positionedSource)
+  const style = 'display: inline-block; white-space: pre-wrap; overflow-wrap: anywhere; overflow: hidden; max-width: 100%; max-height: 100%; font-size: 16px; line-height: 1.5; min-height: 1.5em; ' + (text.style ?? '')
+  return appendHtmlLayoutObject(positionedModel, `<span data-mt-textbox="true" style="${escapeAttribute(style, '"')}">${escapeText(text.text)}</span>`)
 }

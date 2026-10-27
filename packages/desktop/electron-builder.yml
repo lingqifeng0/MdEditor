@@ -123,7 +123,7 @@ fileAssociations:
     role: Editor
     icon: icons/md.ico
 win:
-  executableName: MarkTextToolbar
+  executableName: MdEditor
   artifactName: '${productName}-win-${arch}-${version}.${ext}'
   target:
     - target: 'nsis'

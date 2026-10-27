@@ -17,8 +17,8 @@ def main():
     parser.add_argument('--output', type=Path, default=root / 'dist' / f'{product}-win-x64-{version}.zip')
     args = parser.parse_args()
     program = args.program.resolve(strict=True)
-    if not (program / 'MarkTextToolbar.exe').is_file():
-        raise RuntimeError('Build the Windows x64 application first; MarkTextToolbar.exe is missing.')
+    if not (program / 'MdEditor.exe').is_file():
+        raise RuntimeError('Build the Windows x64 application first; MdEditor.exe is missing.')
     if not product or any(character in product for character in '/\\:'):
         raise RuntimeError('The product name must be one directory component.')
     output = args.output.resolve()

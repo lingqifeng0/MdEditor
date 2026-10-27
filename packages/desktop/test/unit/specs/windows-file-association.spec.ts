@@ -38,7 +38,7 @@ const unassociate = macroBody('APP_UNASSOCIATE', associationScript)
 describe('Windows Markdown file association (build/windows/installer.nsh)', () => {
   it('keeps the ProgId name an existing "Open with" choice points at', () => {
     expect(builder.match(/name: MarkTextToolbar\.Document/g)).toHaveLength(EXTENSIONS.length)
-    expect(builder).toContain('executableName: MarkTextToolbar')
+    expect(builder).toContain('executableName: MdEditor')
     expect(macroBody('customHeader')).toContain('!include "${MARKTEXT_TOOLBAR_ASSOCIATIONS}"')
   })
 

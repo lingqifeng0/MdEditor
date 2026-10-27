@@ -4,7 +4,7 @@
 
 API 类型以 [`sdk/index.d.ts`](sdk/index.d.ts) 为准；安装包声明以 [`manifest.schema.json`](manifest.schema.json) 和运行时校验器为准。完整交付位于 `Windows-v8.31/`：软件安装器和便携 ZIP 在最外层，最终验收记录在 `验证记录/`，源码 ZIP 和本开发说明在 `开发资料/`。本文件是新版开发交接入口，旧 v8.29/v8.30 的 SDK 1 文件只能作为历史参考。
 
-便携 ZIP 名称为 `MdEditor-win-x64-0.31.0-toolbar.v8.31.zip`，包内顶层文件夹统一叫 `MdEditor`。解压后从 `MdEditor/MarkTextToolbar.exe` 启动，用户数据和插件目录随这个软件文件夹迁移。
+便携 ZIP 名称为 `MdEditor-win-x64-0.31.0-toolbar.v8.31.zip`，包内顶层文件夹统一叫 `MdEditor`。解压后从 `MdEditor/MdEditor.exe` 启动，用户数据和插件目录随这个软件文件夹迁移。
 
 ## 1. 已确立的边界
 
@@ -22,7 +22,7 @@ API 类型以 [`sdk/index.d.ts`](sdk/index.d.ts) 为准；安装包声明以 [`m
 
 ```text
 MdEditor/
-├─ MarkTextToolbar.exe
+├─ MdEditor.exe
 ├─ resources/app.asar
 └─ marktext-user-data/
    ├─ plugins/
@@ -217,7 +217,7 @@ node scripts/verify-plugin-platform-v2.cjs
 node scripts/verify-platform-asar.cjs
 node scripts/verify-portable-paths.cjs
 # 对打包程序验证原有编辑功能：
-$env:MARKTEXT_TEST_EXECUTABLE = '实际 v8.31 测试程序路径\MarkTextToolbar.exe'
+$env:MARKTEXT_TEST_EXECUTABLE = '实际 v8.31 测试程序路径\MdEditor.exe'
 $env:MARKTEXT_TEST_OUTPUT = '../validation'
 node scripts/verify-v825-features.cjs
 ```

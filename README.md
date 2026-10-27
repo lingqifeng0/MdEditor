@@ -100,7 +100,7 @@ v8.32 在右侧增加 **添加文字** 和 **删除文字框**。新增后自动
 
 - 软件显示名称统一为 **MdEditor**，使用深色正方形背景的蓝色 `M` 与向下箭头图标，并提供配套 Markdown 文件关联图标。
 - “偏好设置”直接点击打开，保留 `Ctrl+,` 快捷键。
-- 便携 ZIP 的顶层文件夹为 `MdEditor`。为兼容已有配置与文件关联，程序文件名仍为 `MarkTextToolbar.exe`，数据目录仍为 `marktext-user-data`。
+- 便携 ZIP 的顶层文件夹为 `MdEditor`，程序文件名为 `MdEditor.exe`。为兼容已有配置与文件关联，数据目录仍为 `marktext-user-data`。
 
 ## 源码结构
 
@@ -144,7 +144,7 @@ python scripts/package-portable.py
 
 ```text
 MdEditor/
-├─ MarkTextToolbar.exe
+├─ MdEditor.exe
 ├─ resources/
 ├─ 其他运行所需文件
 └─ marktext-user-data/

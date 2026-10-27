@@ -11,7 +11,7 @@ The desktop `electron-builder.yml` positively includes compiled `out/**` and pac
 1. Check the packaged manifest version, compiled renderer and required platform binaries, including `@vscode/ripgrep-win32-x64/bin/rg.exe` for Windows x64.
 2. Inspect archive paths to ensure source tests, test results, Trellis, dependencies used only for development, and personal data are excluded. Trellis remains repository development tooling.
 3. Run representative Electron UI tests against the actual packaged executable using `MARKTEXT_TEST_EXECUTABLE`, not only the development Electron executable. Use disposable profiles and notes. Startup and save/reopen must pass.
-4. Build the portable archive with `scripts/package-portable.py`. Its root folder is `MdEditor/`; compatibility names remain `MarkTextToolbar.exe` and `marktext-user-data`.
+4. Build the portable archive with `scripts/package-portable.py`. Its root folder is `MdEditor/`; the executable is `MdEditor.exe`, while the legacy data directory remains `marktext-user-data` for settings compatibility.
 5. Verify archive CRC, file bytes and SHA-256. The portable packager must not copy real user data or follow dependency junctions.
 
 Uninstalled optional binaries for other operating systems may be reported by the collector. Verify that the current platform's required binary exists in the final package rather than treating every optional warning as equivalent.

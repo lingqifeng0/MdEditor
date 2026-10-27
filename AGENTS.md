@@ -17,7 +17,7 @@ MdEditor is a MarkText-based Electron and Vue Markdown editor. The desktop works
 - Read `.github/COMMENTING-GUIDELINES.md` for comments. Explain invariants and rationale rather than restating code.
 - Renderer Node access goes through the typed preload bridge; preserve sandbox and context isolation.
 - Keep SDK permissions, document revision checks and edit transactions. Player parsing, native IPC and helper processes belong to the independent video plugin.
-- Keep compatibility identifiers (`local.marktext.toolbar`, `MarkTextToolbar.exe`, `marktext-user-data`) unless a deliberate migration is requested.
+- Keep compatibility identifiers (`local.marktext.toolbar`, the legacy `MarkTextToolbar.Document` ProgId and `marktext-user-data`) unless a deliberate migration is requested. The Windows executable is intentionally branded `MdEditor.exe`.
 - Test with disposable profiles and fixtures. Do not change users' installed software, plugins, notes or configuration during verification.
 - Commit source, necessary assets, tests and documentation. Do not commit dependencies, generated bundles, installers, personal data, credentials or local validation output.
 - Preserve the MIT license and upstream copyright notices.

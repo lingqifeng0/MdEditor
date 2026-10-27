@@ -122,3 +122,37 @@ Delivered the local MdEditor repair preview with independent HTML modal undo/red
 ### Next Steps
 
 - None - task complete
+
+
+## Session 4: 滚动性能与悬浮目录定位修复
+
+**Date**: 2026-10-27
+**Task**: 滚动性能与悬浮目录定位修复
+**Package**: marktext
+**Branch**: `main`
+
+### Summary
+
+优化悬浮目录滚动定位，避免每帧测量全部标题；减少表格 hover 的重复命中测试。完成 Muya 全量测试、桌面类型检查、悬浮目录 E2E 与本机图文笔记性能回归。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d33b566` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

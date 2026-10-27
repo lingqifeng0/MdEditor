@@ -67,7 +67,7 @@ Delivered the local MdEditor repair preview with independent HTML modal undo/red
 - Reduced primary hover hit tests across preview, paragraph and table tools. The same copied-note mouse/wheel sequence measured ScriptDuration about 1.99 s to 0.96 s, p95 frame interval 40.1 ms to 26.8 ms, and over-50-ms intervals 13 to 1 in the final packaged executable. Offset probes remain real hit tests and image interactions remain enabled.
 - Validation passed: 1,739 desktop units (36 existing skips), 251 engine UI/pointer tests, full typecheck, changed-file lint, 10 development Electron cases, 6 final packaged cases, real-note deletion and portable archive CRC/byte verification.
 - Retained source/data/asset-history contracts and pointer profiling lessons in Trellis specs. No independent video plugin changes, installed-app update or remote publication. Video-study stays at 0.2.5.
-- Portable preview, usage instructions, checksum and private verification screenshot are in the familiar Windows-v8.32-预览 delivery folder; source commits contain only public synthetic screenshots.
+- Portable v8.32 package, usage instructions, checksum and private verification screenshot are in the familiar Windows-v8.32 delivery folder; source commits contain only public synthetic screenshots.
 
 
 ### Git Commits

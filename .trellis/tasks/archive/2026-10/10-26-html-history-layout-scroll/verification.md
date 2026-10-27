@@ -33,7 +33,7 @@ The old v8.31 comparison reproduced approximately the same pre-fix cost as v8.32
 
 ## Artifacts
 
-- Local delivery: `../MarkText-Toolbar/Windows-v8.32-预览/`.
+- Local delivery: `../MarkText-Toolbar/Windows-v8.32/`.
 - Archive: final combined v8.32 archive; its checksum is recorded beside the package in the delivery folder.
 - Public synthetic screenshot: `docs/assets/screenshots/html-layout-history.png`.
 - Private real-note reproduction screenshot/logs remain in local validation/delivery output, outside Git.

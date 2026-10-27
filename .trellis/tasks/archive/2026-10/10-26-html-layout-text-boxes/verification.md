@@ -27,11 +27,11 @@ The full repository's unrelated end-to-end suites were not rerun. The new intera
 
 - Actual final packaged-window screenshot: `docs/assets/screenshots/html-text-boxes.png`.
 - Local validation logs and JSON reports: `validation/html-text-boxes-20261026/` (ignored by Git).
-- Local delivery directory adjacent to the old v8.31 delivery: `../MarkText-Toolbar/Windows-v8.32-预览/`.
-- Archive: `MdEditor-win-x64-v8.32-HTML文字框预览.zip`; 180,676,028 bytes; root `MdEditor/`.
+- Local delivery directory adjacent to the old v8.31 delivery: `../MarkText-Toolbar/Windows-v8.32/`.
+- Archive: `MdEditor-win-x64-v8.32.zip`; root `MdEditor/`.
 - SHA-256: `26eeeeda57156a25f560e2971d2135af402e45bc0adec6f0c9c52970565f30b7`.
 
-This is a local preview, with no GitHub push or release publication and no automatic installation into the user's existing app.
+This is a local v8.32 package, with no GitHub push or release publication and no automatic installation into the user's existing app.
 
 ## Findings retained in specs
 

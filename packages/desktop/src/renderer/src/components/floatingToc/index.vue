@@ -202,7 +202,7 @@ import bus from '@/bus'
 import { TOP_LEVEL_HEADINGS_SELECTOR } from '@/util/tocNavigation'
 import { findMarkdownHeadingLine, getMarkdownHeadingSource } from '@/util/sourceModeToc'
 import { floatingTocLabel } from '@/util/floatingTocLabel'
-import { deriveFloatingToc, visibleFloatingToc, floatingTocAncestors, findFloatingTocActive, floatingTocOutline, searchFloatingToc, revealFloatingTocMatches } from '@/util/floatingToc'
+import { deriveFloatingToc, visibleFloatingToc, floatingTocAncestors, findFloatingTocActiveAtScroll, floatingTocOutline, searchFloatingToc, revealFloatingTocMatches } from '@/util/floatingToc'
 
 const { t } = useI18n()
 const preferencesStore = usePreferencesStore()
@@ -233,9 +233,11 @@ let container: HTMLElement | null = null
 let mutationObserver: MutationObserver | null = null
 let resizeObserver: ResizeObserver | null = null
 let frame: number | null = null
+let activeFrame: number | null = null
 let copyTimer: ReturnType<typeof setTimeout> | null = null
 let destroyed = false
 let connection = 0
+let headingPositions: Array<{ slug: string; top: number }> = []
 
 const keepActiveVisible = (): void => {
   if (searchQuery.value.trim()) return
@@ -250,27 +252,53 @@ const keepActiveVisible = (): void => {
   else if (item.bottom > box.bottom) list.value.scrollTop += item.bottom - box.bottom
 }
 
+const updateActive = (): void => {
+  activeFrame = null
+  if (!container || destroyed) return
+  const nextSlug = findFloatingTocActiveAtScroll(
+    headingPositions,
+    container.scrollTop,
+    container.scrollTop > 0 && container.scrollTop + container.clientHeight >= container.scrollHeight - 1
+  )
+  if (nextSlug === activeSlug.value) return
+  activeSlug.value = nextSlug
+  keepActiveVisible()
+}
+
 const measure = (): void => {
   frame = null
   if (!container || destroyed) return
   const headings = sourceCode.value
     ? container.querySelectorAll('.CodeMirror-code .CodeMirror-line')
     : container.querySelectorAll(TOP_LEVEL_HEADINGS_SELECTOR)
-  const positions = entries.value.flatMap(entry => {
+  // Store document-relative positions once per layout change. Scroll updates
+  // then need only the container's scrollTop and do not force a full layout.
+  const containerTop = container.getBoundingClientRect().top
+  const scrollTop = container.scrollTop
+  headingPositions = entries.value.flatMap(entry => {
     const index = sourceCode.value ? sourceLines.value.get(entry.index) ?? -1 : entry.index
     const element = headings[index]
-    return element ? [{ slug: entry.slug, top: element.getBoundingClientRect().top }] : []
+    return element ? [{ slug: entry.slug, top: element.getBoundingClientRect().top - containerTop + scrollTop }] : []
   })
-  activeSlug.value = findFloatingTocActive(positions, container.getBoundingClientRect().top, container.scrollTop > 0 && container.scrollTop + container.clientHeight >= container.scrollHeight - 1)
-  keepActiveVisible()
+  updateActive()
 }
 
 const scheduleMeasure = (): void => {
-  if (!destroyed && frame === null) frame = requestAnimationFrame(measure)
+  if (destroyed) return
+  if (activeFrame !== null) {
+    cancelAnimationFrame(activeFrame)
+    activeFrame = null
+  }
+  if (frame === null) frame = requestAnimationFrame(measure)
+}
+
+const scheduleActive = (): void => {
+  if (destroyed || frame !== null || activeFrame !== null) return
+  activeFrame = requestAnimationFrame(updateActive)
 }
 
 const disconnect = (): void => {
-  container?.removeEventListener('scroll', scheduleMeasure)
+  container?.removeEventListener('scroll', scheduleActive)
   container?.removeEventListener('load', scheduleMeasure, true)
   mutationObserver?.disconnect()
   resizeObserver?.disconnect()
@@ -279,6 +307,9 @@ const disconnect = (): void => {
   container = null
   if (frame !== null) cancelAnimationFrame(frame)
   frame = null
+  if (activeFrame !== null) cancelAnimationFrame(activeFrame)
+  activeFrame = null
+  headingPositions = []
 }
 
 const connect = async (): Promise<void> => {
@@ -289,7 +320,7 @@ const connect = async (): Promise<void> => {
   const root = navigation.value?.parentElement ?? document.querySelector('.editor-with-tabs')
   container = root?.querySelector<HTMLElement>(sourceCode.value ? '.source-code' : '.mu-editor') ?? null
   if (!container) return
-  container.addEventListener('scroll', scheduleMeasure, { passive: true })
+  container.addEventListener('scroll', scheduleActive, { passive: true })
   container.addEventListener('load', scheduleMeasure, true)
   mutationObserver = new MutationObserver(scheduleMeasure)
   mutationObserver.observe(container, { childList: true, subtree: true, characterData: true })

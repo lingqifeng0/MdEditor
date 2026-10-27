@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { pointerElements } from '../pointerHitTest';
+import { pointerElements, pointerHasBlock } from '../pointerHitTest';
 
 let nativeDescriptor: PropertyDescriptor | undefined;
 beforeEach(() => {
@@ -30,6 +30,16 @@ describe('hover pointer hit testing', () => {
         const elements = pointerElements(mouseOn(image));
         expect(elements.slice(0, 3)).toEqual([image, image.parentElement, image.parentElement!.parentElement]);
         expect(native).not.toHaveBeenCalled();
+    });
+
+    it('recognizes a table cell in the primary path so edge probes can be skipped', () => {
+        document.body.innerHTML = '<table><tr><td>cell</td></tr></table>';
+        const cell = document.querySelector('td')!;
+        Object.defineProperty(cell, '__MUYA_BLOCK__', { value: { blockName: 'table.cell' } });
+        const elements = pointerElements(mouseOn(cell));
+
+        expect(pointerHasBlock(elements, 'table.cell')).toBe(true);
+        expect(pointerHasBlock(elements, 'paragraph')).toBe(false);
     });
 
     it('does not show a background block through a foreground overlay', () => {

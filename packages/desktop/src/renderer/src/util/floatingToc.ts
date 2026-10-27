@@ -58,10 +58,30 @@ export function findFloatingTocActive(
   positions: ReadonlyArray<{ slug: string; top: number }>, viewportTop: number, atBottom = false
 ): string | null {
   if (!positions.length) return null
-  if (atBottom) return positions[positions.length - 1]!.slug
+  if (atBottom) return positions[positions.length - 1]?.slug ?? null
   let active = positions[0]!.slug
   for (const heading of positions) {
     if (heading.top > viewportTop + 25) break
+    active = heading.slug
+  }
+  return active
+}
+
+/**
+ * Resolve the active heading from document-relative positions without forcing
+ * a layout read during scrolling. `scrollTop` and `top` share the editor's
+ * content coordinate space; the 25px clearance matches the viewport-based
+ * helper above.
+ */
+export function findFloatingTocActiveAtScroll(
+  positions: ReadonlyArray<{ slug: string; top: number }>, scrollTop: number, atBottom = false
+): string | null {
+  if (!positions.length) return null
+  if (atBottom) return positions[positions.length - 1]?.slug ?? null
+  let active = positions[0]?.slug ?? null
+  if (active === null) return null
+  for (const heading of positions) {
+    if (heading.top > scrollTop + 25) break
     active = heading.slug
   }
   return active

@@ -130,6 +130,15 @@ describe('floating directory scroll position', () => {
     expect(tocHelpers.findFloatingTocActive(positions, 0, true)).toBe('last')
     expect(tocHelpers.findFloatingTocActive([], 0, true)).toBeNull()
   })
+
+  it('resolves document-relative heading positions without viewport layout reads', () => {
+    const positions = [{ slug: 'first', top: 180 }, { slug: 'second', top: 500 }]
+    expect(tocHelpers.findFloatingTocActiveAtScroll(positions, 0)).toBe('first')
+    expect(tocHelpers.findFloatingTocActiveAtScroll(positions, 475)).toBe('second')
+    expect(tocHelpers.findFloatingTocActiveAtScroll(positions, 474)).toBe('first')
+    expect(tocHelpers.findFloatingTocActiveAtScroll(positions, 200, true)).toBe('second')
+    expect(tocHelpers.findFloatingTocActiveAtScroll([], 0)).toBeNull()
+  })
 })
 
 interface SetupModule<T> {

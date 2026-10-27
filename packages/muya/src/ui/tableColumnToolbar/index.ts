@@ -4,7 +4,7 @@ import type { Muya } from '../../index';
 import type { TableColumnToolIcon } from './config';
 import { BLOCK_DOM_PROPERTY } from '../../config';
 import { isMouseEvent, throttle } from '../../utils';
-import { pointerElements } from '../../utils/pointerHitTest';
+import { pointerElements, pointerHasBlock } from '../../utils/pointerHitTest';
 import { h, patch } from '../../utils/snabbdom';
 import BaseFloat from '../baseFloat';
 import icons from './config';
@@ -68,16 +68,16 @@ export class TableColumnToolbar extends BaseFloat {
             if (this.status && topmost && this.floatBox?.contains(topmost))
                 return;
 
-            const bellowEles = pointerElements(event, 0, OFFSET);
-            const hasTableCell = (eles: Element[]) => {
-                return eles.some(
-                    ele =>
-                        ele[BLOCK_DOM_PROPERTY]
-                        && ele[BLOCK_DOM_PROPERTY].blockName === 'table.cell',
-                );
-            };
+            // The primary ancestor path already identifies the cell under the
+            // pointer. The offset probe is only needed when looking below the
+            // pointer for a cell edge, so avoid a native hit test in the hot
+            // path over normal table content.
+            if (pointerHasBlock(eles, 'table.cell'))
+                return this.hide();
 
-            if (!hasTableCell(eles) && hasTableCell(bellowEles)) {
+            const bellowEles = pointerElements(event, 0, OFFSET);
+
+            if (pointerHasBlock(bellowEles, 'table.cell')) {
                 const tableCellEle = bellowEles.find(
                     ele =>
                         ele[BLOCK_DOM_PROPERTY]

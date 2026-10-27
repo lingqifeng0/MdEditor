@@ -13,7 +13,7 @@ Preview, paragraph and table controls share mouse hover work. Image-heavy notes 
 - At the event's actual coordinate, return the connected event target and its ancestors, nearest first. The browser has already resolved which foreground element received the mouse.
 - Nonzero coordinate offsets still use the owning document's real `elementsFromPoint`. A target's bounding rectangle cannot prove which element occupies a neighboring coordinate.
 - If a deferred event's target was removed, recheck its current coordinate rather than retaining a detached block.
-- Paragraph tools first search the primary path, and only probe their margin if no outer block was found. Preserve existing table-edge offsets and toolbar-overhang guards.
+- Paragraph tools first search the primary path, and only probe their margin if no outer block was found. Table tools likewise skip their above/below/left edge probes when the primary path already contains a table cell; preserve the real offset hit test for the actual edge case and keep the toolbar-overhang guard.
 - Add no document-edit side effects, global pointer listeners or long-lived DOM caches to this helper.
 
 ## Validation and cases

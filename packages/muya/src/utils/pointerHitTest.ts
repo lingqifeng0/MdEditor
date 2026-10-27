@@ -1,3 +1,5 @@
+import { BLOCK_DOM_PROPERTY } from '../config';
+
 /** The browser already hit-tested a mouse event; hover tools can reuse its ancestor path. */
 export function pointerElements(event: MouseEvent, offsetX = 0, offsetY = 0): Element[] {
     const target = event.target;
@@ -11,4 +13,13 @@ export function pointerElements(event: MouseEvent, offsetX = 0, offsetY = 0): El
     // still need a real hit test. Do not infer them from the target's rectangle.
     const owner = target instanceof Node ? target.ownerDocument ?? document : document;
     return owner.elementsFromPoint(event.clientX + offsetX, event.clientY + offsetY);
+}
+
+/** Check a hit-test path for a Muya block without performing another DOM hit test. */
+export function pointerHasBlock(elements: readonly Element[], blockName: string): boolean {
+    return elements.some((element) => {
+        const block = element[BLOCK_DOM_PROPERTY] as { blockName?: string } | undefined;
+
+        return block?.blockName === blockName;
+    });
 }

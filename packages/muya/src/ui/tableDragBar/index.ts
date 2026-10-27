@@ -6,7 +6,7 @@ import type { Muya } from '../../index';
 import { ScrollPage } from '../../block/scrollPage';
 import { BLOCK_DOM_PROPERTY } from '../../config';
 import { isMouseEvent, throttle } from '../../utils';
-import { pointerElements } from '../../utils/pointerHitTest';
+import { pointerElements, pointerHasBlock } from '../../utils/pointerHitTest';
 import BaseFloat from '../baseFloat';
 import './index.css';
 
@@ -185,20 +185,19 @@ export class TableDragBar extends BaseFloat {
                 return;
 
             const els = pointerElements(event);
+
+            // The primary event target is authoritative for the pointer's
+            // actual cell. Above/left probes are only needed around a table
+            // edge, so skip both native hit tests while over regular cells.
+            if (pointerHasBlock(els, 'table.cell'))
+                return this.hide();
+
             const aboveEls = pointerElements(event, 0, -OFFSET);
             const leftEls = pointerElements(event, -OFFSET, 0);
 
-            const hasTableCell = (els: Element[]) =>
-                els.some(
-                    ele =>
-                        ele[BLOCK_DOM_PROPERTY]
-                        && ele[BLOCK_DOM_PROPERTY].blockName === 'table.cell',
-                );
-
             if (
                 !this._isDragTableBar
-                && !hasTableCell(els)
-                && (hasTableCell(aboveEls) || hasTableCell(leftEls))
+                && (pointerHasBlock(aboveEls, 'table.cell') || pointerHasBlock(leftEls, 'table.cell'))
             ) {
                 const tableCellEl = [...aboveEls, ...leftEls].find(
                     ele =>
@@ -206,7 +205,7 @@ export class TableDragBar extends BaseFloat {
                         && ele[BLOCK_DOM_PROPERTY].blockName === 'table.cell',
                 );
                 const cellBlock = tableCellEl![BLOCK_DOM_PROPERTY] as TableBodyCell;
-                const barType = hasTableCell(aboveEls) ? 'bottom' : 'right';
+                const barType = pointerHasBlock(aboveEls, 'table.cell') ? 'bottom' : 'right';
 
                 this.options = Object.assign(
                     {},

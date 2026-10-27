@@ -1,0 +1,4 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `py -3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/spec/guides/project-boundaries.md", "reason": "Keep the desktop and Muya boundaries and preserve the independent video plugin"}
+{"file": ".trellis/spec/core/frontend/pointer-hover.md", "reason": "Preserve hit-test and foreground overlay contracts while optimizing hover work"}
+{"file": ".trellis/spec/marktext/frontend/index.md", "reason": "Apply desktop frontend testing and Electron verification requirements"}

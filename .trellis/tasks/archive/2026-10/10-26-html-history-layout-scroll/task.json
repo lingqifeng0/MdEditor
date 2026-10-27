@@ -33,6 +33,6 @@
     "packages/muya/src/ui/tableColumnToolbar/index.ts",
     "packages/muya/src/ui/tableDragBar/index.ts"
   ],
-  "notes": "Validated v8.33 local portable preview, real-note caption geometry and packaged scrolling profile. Original note hash unchanged. Independent video-study plugin remains 0.2.5; no remote publication.",
+  "notes": "Validated the final combined v8.32 local portable preview, real-note caption geometry and packaged scrolling profile. Original note hash unchanged. Independent video-study plugin remains 0.2.5; no remote publication.",
   "meta": {}
 }

@@ -15,7 +15,7 @@ The HTML modal owns undo/redo for its draft, including structural actions, text/
 | Development Electron feature/regression suites | 10 passed, no unexpected/flaky results. |
 | Final packaged executable | 6 representative tests passed, including all four history/geometry cases and text add/edit/save/fresh-profile reopen. |
 | Real note caption scenario | Passed against the user's copied note and real assets: three images, maximum rectangle/frame deviation 0.0089111328125 CSS px through deletion and Apply/reopen; undo/redo passed. Copy on disk and original input note hash remained unchanged. |
-| Package inspection | v8.33 manifest; no tests, development config or Trellis in app.asar; Windows ripgrep binary and license notices present. |
+| Package inspection | Final combined v8.32 manifest; no tests, development config or Trellis in app.asar; Windows ripgrep binary and license notices present. |
 | Portable archive | CRC and every file's bytes verified; root MdEditor/; no personal user data included. |
 | Scope | No independent video-study, main-process or preload code changes. No installed app update or GitHub publication. |
 
@@ -23,7 +23,7 @@ The HTML modal owns undo/redo for its draft, including structural actions, text/
 
 Windows x64, Electron 42.1.0, isolated equal dark-theme profiles, copied note and 239 original asset files, 65 equivalent mouse/wheel steps. GPU acceleration remains enabled. Raw CPU profiles and measurement JSON are retained under ignored `validation/html-regressions-20261026/`.
 
-| Metric | v8.32 package | Final v8.33 package |
+| Metric | Earlier v8.32 package | Final combined v8.32 package |
 | --- | --- | --- |
 | ScriptDuration | 1.988276 s | 0.964 s (rounded) |
 | Frame interval p95 | 40.1 ms | 26.8 ms |
@@ -33,9 +33,8 @@ The old v8.31 comparison reproduced approximately the same pre-fix cost as v8.32
 
 ## Artifacts
 
-- Local delivery: `../MarkText-Toolbar/Windows-v8.33-预览/`.
-- Archive: `MdEditor-win-x64-v8.33-修复预览.zip`; 180,677,971 bytes.
-- SHA-256: `087e44a4fb3180bc55992e99eaa29e48c1ffb8bdf776912600a9af5007fe36cf`.
+- Local delivery: `../MarkText-Toolbar/Windows-v8.32-预览/`.
+- Archive: final combined v8.32 archive; its checksum is recorded beside the package in the delivery folder.
 - Public synthetic screenshot: `docs/assets/screenshots/html-layout-history.png`.
 - Private real-note reproduction screenshot/logs remain in local validation/delivery output, outside Git.
 

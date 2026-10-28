@@ -1,0 +1,5 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `py -3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/spec/guides/project-boundaries.md", "reason": "Check scope and module boundaries"}
+{"file": ".trellis/spec/marktext/frontend/index.md", "reason": "Check desktop frontend quality and Electron verification"}
+{"file": ".trellis/spec/marktext/frontend/quality-guidelines.md", "reason": "Check test and lint expectations"}
+{"file": ".trellis/tasks/10-27-floating-toc-long-scroll-lag/research/long-scroll-profile.md", "reason": "Check proposed hot-path changes against observed profiling"}

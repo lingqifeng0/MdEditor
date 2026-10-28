@@ -139,6 +139,14 @@ describe('floating directory scroll position', () => {
     expect(tocHelpers.findFloatingTocActiveAtScroll(positions, 200, true)).toBe('second')
     expect(tocHelpers.findFloatingTocActiveAtScroll([], 0)).toBeNull()
   })
+
+  it('resolves the active heading from a large cached outline without changing boundary behavior', () => {
+    const positions = Array.from({ length: 10000 }, (_, index) => ({ slug: `heading-${index}`, top: index * 120 }))
+    expect(tocHelpers.findFloatingTocActiveAtScroll(positions, 0)).toBe('heading-0')
+    expect(tocHelpers.findFloatingTocActiveAtScroll(positions, 599974)).toBe('heading-4999')
+    expect(tocHelpers.findFloatingTocActiveAtScroll(positions, 1200000)).toBe('heading-9999')
+    expect(tocHelpers.findFloatingTocActiveAtScroll(positions, 1200000, true)).toBe('heading-9999')
+  })
 })
 
 interface SetupModule<T> {
@@ -176,6 +184,8 @@ interface ToggleBindings {
 interface PanelBindings {
   collapsed: Vue.Ref<Set<string>>
   activeSlug: Vue.Ref<string | null>
+  parentSlug: Vue.ComputedRef<string | null>
+  grandparentSlug: Vue.ComputedRef<string | null>
   hovered: Vue.Ref<boolean>
   expanded: Vue.ComputedRef<boolean>
   visibleEntries: Vue.ComputedRef<FloatingTocEntry[]>
@@ -231,6 +241,35 @@ const bootControls = (enabled = false) => {
 }
 
 describe('floating directory controls', () => {
+  it('tracks only the real parent and grandparent as the current heading changes', () => {
+    const { panel, editor } = bootControls(true)
+    editor.listToc = Array.from({ length: 6 }, (_, index) => heading(`h${index + 1}`, index + 1))
+    panel.activeSlug.value = 'h6'
+    expect(panel.parentSlug.value).toBe('h5')
+    expect(panel.grandparentSlug.value).toBe('h4')
+    panel.activeSlug.value = 'h4'
+    expect(panel.parentSlug.value).toBe('h3')
+    expect(panel.grandparentSlug.value).toBe('h2')
+    panel.activeSlug.value = 'h1'
+    expect(panel.parentSlug.value).toBeNull()
+    expect(panel.grandparentSlug.value).toBeNull()
+    panel.activeSlug.value = 'missing'
+    expect(panel.parentSlug.value).toBeNull()
+    expect(panel.grandparentSlug.value).toBeNull()
+  })
+
+  it('uses existing ancestor relationships when heading levels are skipped or removed', async() => {
+    const { panel, editor } = bootControls(true)
+    editor.listToc = [heading('h1', 1), heading('h3', 3), heading('h6', 6)]
+    panel.activeSlug.value = 'h6'
+    expect(panel.parentSlug.value).toBe('h3')
+    expect(panel.grandparentSlug.value).toBe('h1')
+    editor.listToc = [heading('h6', 6)]
+    await Vue.nextTick()
+    expect(panel.parentSlug.value).toBeNull()
+    expect(panel.grandparentSlug.value).toBeNull()
+  })
+
   it('reads saved settings without writing any preference or document content on opening', () => {
     const { toggle, preferences, editor, save, emit, copy } = bootControls(true)
     expect(toggle.floatingTocEnabled.value).toBe(true)

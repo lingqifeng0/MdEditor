@@ -1,6 +1,6 @@
 {
   "name": "marktext-monorepo",
-  "version": "0.31.0-toolbar.v8.34",
+  "version": "0.31.0-toolbar.v8.38",
   "description": "MarkText monorepo root",
   "private": true,
   "homepage": "https://github.com/lingqifeng0/MdEditor",

@@ -4,6 +4,8 @@
 
 Use the repository-pinned pnpm 10.33.4 for installation and invoke electron-builder through `pnpm exec` or the existing pnpm build scripts. Running the builder directly without package-manager environment metadata can make it select the npm collector for this pnpm workspace. In the 2026-10-26 preview check, that omitted the installed `@vscode/ripgrep-win32-x64` optional package and blocked startup before a window was created.
 
+Check the actual `pnpm --version`: the Codex fallback shim may resolve to pnpm 11 even when `packageManager` pins 10.33.4. If necessary invoke `npx --yes --package=pnpm@10.33.4 pnpm exec electron-builder ...` so the collector receives the intended package-manager environment. Do not weaken dependency policies globally to compensate for a different pnpm major version.
+
 The desktop `electron-builder.yml` positively includes compiled `out/**` and package metadata. Runtime dependencies are collected separately; static resources and license notices are copied through `extraResources`. Do not rely on the default broad file glob: it also admits test fixtures, screenshots, test results and development configuration into `app.asar`.
 
 ## Delivery checks

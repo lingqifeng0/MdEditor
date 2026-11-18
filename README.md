@@ -20,15 +20,15 @@ MdEditor 是基于 [MarkText](https://github.com/marktext/marktext) 开发的本
 
 - **文字工具栏**：快速设置文字格式、颜色、列表、公式和对齐；支持在设置中拖动图标交换顺序，并恢复默认顺序。
 - **悬浮目录**：按标题层级导航、搜索和折叠；展开时 H1～H6 标识从冷色到暖色区分层级，标题沿用正文颜色。当前位置以浅色背景标记，收起后用蓝色刻度显示当前位置。
-- **图片与 HTML 布局**：可视化移动、缩放和排列图片与文字框；文字框支持内容、字号和颜色设置。编辑窗口支持撤销、重做，并限制对象在 HTML 范围内。
+- **图片与 HTML 布局**支持在同一画布排列图片、文字和表格。可直接编辑单元格、拖边调整行列和外框，分别设置底色、线条色和字体。正文大图选中后，滚动时仍能拖动可见侧边缩放。
 - **搜索与本地附件**：搜索时可以选择和修改搜索词，关闭后再次打开仍保留内容；右键本地附件链接可打开所在文件夹。
 - **插件扩展**：支持 `.mtplug` 安装、更新和管理，插件页面显示版本并提供独立设置。视频回看插件可通过时间戳定位视频，支持 [FrameFlow](https://github.com/lingqifeng0/FrameFlow)、mpv.net 和兼容 mpv JSON IPC 的播放器。
 
 ## 功能截图
 
-| 悬浮目录 | HTML 图片与文字布局 |
+| 悬浮目录 | HTML 图文与表格布局 |
 | --- | --- |
-| ![悬浮目录与标题层级配色](docs/assets/screenshots/floating-outline-v8.38.png) | ![HTML 布局中的图片和文字框](docs/assets/screenshots/html-text-boxes.png) |
+| ![悬浮目录与标题层级配色](docs/assets/screenshots/floating-outline-v8.38.png) | ![在 HTML 布局中调整表格和单元格底色](docs/assets/screenshots/html-layout-v8.39.png) |
 
 工具栏按钮可以在设置中拖动排序：
 

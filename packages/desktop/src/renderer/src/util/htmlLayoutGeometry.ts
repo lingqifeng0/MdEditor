@@ -10,11 +10,12 @@ const hasOnlyTranslation = (style: CSSStyleDeclaration) => {
   return values.length === 6 && values.every(Number.isFinite) && values[0] === 1 && values[1] === 0 && values[2] === 0 && values[3] === 1
 }
 
-/** Structural deletion must not let flex/grid reflow the surviving objects. */
-export function preserveHtmlLayoutGeometry(model: HtmlLayoutDocument, stage: HTMLElement, pending: HtmlLayoutEdit[]): string {
+/** Freeze each layout object in its containing block. Tables retain their own row and cell layout. */
+export function captureHtmlLayoutGeometry(model: HtmlLayoutDocument, stage: HTMLElement, pending: HtmlLayoutEdit[]): HtmlLayoutEdit[] {
   const snapshots = new Map(model.targets.flatMap(target => {
     const element = stage.querySelector<HTMLElement>(`[${model.markerAttribute}="${target.id}"]`)
     if (!element) return []
+    if (element.parentElement?.closest('table')) return []
     const rect = element.getBoundingClientRect()
     if (target.kind === 'image' && (rect.width <= 0 || rect.height <= 0)) throw new Error('图片尚未加载或尺寸为零，请加载图片后再删除对象。')
     const style = getComputedStyle(element)
@@ -22,7 +23,7 @@ export function preserveHtmlLayoutGeometry(model: HtmlLayoutDocument, stage: HTM
     return rect.width > 0 && rect.height > 0 ? [[target.id, { target, element, rect, style }] as const] : []
   }))
   const root = model.rootTargetId && snapshots.get(model.rootTargetId)
-  if (!root || !model.rootContainer) return applyHtmlLayoutEdits(model, pending)
+  if (!root || !model.rootContainer) return pending
   const edits = new Map(pending.map(edit => [edit.id, { ...edit }]))
   for (const [id, snapshot] of snapshots) {
     const { element, rect, style } = snapshot
@@ -44,5 +45,9 @@ export function preserveHtmlLayoutGeometry(model: HtmlLayoutDocument, stage: HTM
     // Container dimensions are frozen too: removing a caption cannot shrink its column or row.
     edits.set(id, edit)
   }
-  return applyHtmlLayoutEdits(model, [...edits.values()])
+  return [...edits.values()]
+}
+
+export function preserveHtmlLayoutGeometry(model: HtmlLayoutDocument, stage: HTMLElement, pending: HtmlLayoutEdit[]): string {
+  return applyHtmlLayoutEdits(model, captureHtmlLayoutGeometry(model, stage, pending))
 }

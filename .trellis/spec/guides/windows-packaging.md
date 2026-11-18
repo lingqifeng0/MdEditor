@@ -6,6 +6,8 @@ Use the repository-pinned pnpm 10.33.4 for installation and invoke electron-buil
 
 Check the actual `pnpm --version`: the Codex fallback shim may resolve to pnpm 11 even when `packageManager` pins 10.33.4. If necessary invoke `npx --yes --package=pnpm@10.33.4 pnpm exec electron-builder ...` so the collector receives the intended package-manager environment. Do not weaken dependency policies globally to compensate for a different pnpm major version.
 
+For VS 2026, use the x64 developer environment and MSVC Spectre libraries for the active toolset. If rebuilding `native-keymap@3.3.9` with the Electron 42.1 headers fails at `cppgc/heap.h` under MSVC, configure that Node-API addon with the Node 22 headers and link it with the matching Spectre libraries. Verify its packaged `keymapping.node` and use Electron runtime checks for the resulting application.
+
 The desktop `electron-builder.yml` positively includes compiled `out/**` and package metadata. Runtime dependencies are collected separately; static resources and license notices are copied through `extraResources`. Do not rely on the default broad file glob: it also admits test fixtures, screenshots, test results and development configuration into `app.asar`.
 
 ## Delivery checks

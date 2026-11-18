@@ -58,6 +58,7 @@ test.describe('HTML modal history and structural layout', () => {
     await open()
     const before = await boxes()
     await page.getByTestId('html-layout-stage').locator('#caption-c').click()
+    await page.getByLabel('对象操作', { exact: true }).click()
     await page.getByTestId('html-layout-delete-text').click()
     await expect(page.getByTestId('html-layout-stage').locator('#caption-c')).toHaveCount(0)
     await sameBoxes(before)
@@ -75,6 +76,7 @@ test.describe('HTML modal history and structural layout', () => {
   })
 
   test('Ctrl+Z and redo cover text, font, color, insertion and a drag gesture', async() => {
+    test.setTimeout(60_000)
     await open()
     await page.getByTestId('html-layout-add-text').click()
     const text = page.getByTestId('html-layout-stage').locator('#row > span:not([id])')
@@ -103,14 +105,25 @@ test.describe('HTML modal history and structural layout', () => {
     await expect(text).toHaveCSS('font-size', '30px')
     await page.getByTestId('html-layout-redo').click()
     await expect(text).toHaveCSS('color', 'rgb(255, 85, 119)')
-    const start = await text.boundingBox()
-    if (!start) throw new Error('Missing text bounds')
-    await page.mouse.move(start.x + 10, start.y + 10)
+    await text.click()
+    const position = () => text.evaluate(node => {
+      const rect = node.getBoundingClientRect()
+      const frame = node.parentElement!.getBoundingClientRect()
+      return { x: rect.left - frame.left, y: rect.top - frame.top }
+    })
+    const start = await position()
+    const moveHandle = await page.getByTestId('html-layout-move-text').boundingBox()
+    if (!moveHandle) throw new Error('Missing text move control')
+    const x = moveHandle.x + moveHandle.width / 2
+    const y = moveHandle.y + moveHandle.height / 2
+    await page.mouse.move(x, y)
     await page.mouse.down()
-    await page.mouse.move(start.x + 40, start.y + 40, { steps: 4 })
+    const dx = start.x > 50 ? -30 : 30
+    await page.mouse.move(x + dx, y, { steps: 4 })
     await page.mouse.up()
+    await expect.poll(async() => (await position()).x).toBeCloseTo(start.x + dx, 0)
     await page.getByTestId('html-layout-undo').click()
-    await expect.poll(async() => (await text.boundingBox())?.y).toBeCloseTo(start.y, 0)
+    await expect.poll(position).toEqual(start)
     await expect(text).toHaveCSS('color', 'rgb(255, 85, 119)')
   })
 

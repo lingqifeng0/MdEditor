@@ -1,3 +1,5 @@
+import { HTML_LAYOUT_FONT_FAMILIES, HTML_LAYOUT_GRID_COLOR, htmlLayoutTableCells, tableCellGridStyles } from './htmlLayoutTableStyles'
+
 export interface HtmlLayoutTarget {
   id: string
   path: number[]
@@ -7,8 +9,17 @@ export interface HtmlLayoutTarget {
   text: string
   textEditable: boolean
   src?: string
+  tableId?: string
+  zIndex?: number
   canMovePrevious: boolean
   canMoveNext: boolean
+}
+
+export interface HtmlLayoutTable {
+  id: string
+  rows: { section: 'head' | 'body' | 'foot'; cells: string[] }[]
+  /** Structural edits need a complete source range for each rectangular track. */
+  editableTracks: boolean
 }
 
 export interface HtmlLayoutDocument {
@@ -17,6 +28,7 @@ export interface HtmlLayoutDocument {
   markerAttribute: string
   /** Leaf objects retain their order; complete enclosing groups follow them. */
   targets: HtmlLayoutTarget[]
+  tables: HtmlLayoutTable[]
   rootContainer: boolean
   rootTargetId?: string
 }
@@ -29,8 +41,15 @@ export interface HtmlLayoutEdit {
   offsetX?: number
   offsetY?: number
   text?: string
+  textFlow?: boolean
   fontSize?: number
-  color?: string
+  fontFamily?: string
+  color?: string | null
+  backgroundColor?: string | null
+  gridColor?: string | null
+  columnWidths?: number[]
+  rowHeights?: number[]
+  zIndex?: number
   clearPaddingTop?: boolean
   position?: 'relative' | 'absolute'
   left?: number
@@ -248,7 +267,8 @@ const parseLayout = (source: string) => {
   const candidates = Array.from(elements.values()).filter(element => {
     if (!isVisible(element)) return false
     const tagName = element.tagName.toLowerCase()
-    return tagName === 'img' || (TEXT_TAGS.has(tagName) && (!!visibleText(element).trim() || element.hasAttribute('data-mt-textbox')))
+    return tagName === 'img' || ['td', 'th'].includes(tagName) ||
+      (TEXT_TAGS.has(tagName) && (!!visibleText(element).trim() || element.hasAttribute('data-mt-textbox')))
   })
   const leaves = candidates.filter(element => !candidates.some(child => child !== element && element.contains(child)))
   const completeContainer = (element: Element): boolean => {
@@ -272,10 +292,40 @@ const parseLayout = (source: string) => {
       leaves.some(leaf => leaf.tagName === 'IMG' && element.contains(leaf)))
   const containers = Array.from(elements.values()).filter(element =>
     containerTagAllowed(element) && isVisible(element) && !leaves.includes(element) &&
-    (leaves.some(leaf => element.contains(leaf)) || (element.parentNode === template.content && !element.children.length && !element.textContent?.trim())) && completeContainer(element)
+    (element.tagName === 'TABLE' || leaves.some(leaf => element.contains(leaf)) ||
+      (element.parentNode === template.content && !element.children.length && !element.textContent?.trim())) && completeContainer(element)
   )
   const containerIds = new Set(containers.map(element => element.getAttribute(markerAttribute)))
-  const selected = [...leaves, ...containers]
+  const tableByCell = new Map<HTMLElement, string>()
+  const tables: HtmlLayoutTable[] = containers.filter((element): element is HTMLTableElement => element.tagName === 'TABLE').map(table => {
+    const id = table.getAttribute(markerAttribute)!
+    const rows = Array.from(table.rows, row => {
+      const section = row.parentElement?.tagName === 'THEAD' ? 'head' : row.parentElement?.tagName === 'TFOOT' ? 'foot' : 'body'
+      const cells = [...row.cells].flatMap(cell => {
+        const cellId = cell.getAttribute(markerAttribute)
+        if (!cellId || !elements.has(cellId) || !isVisible(cell)) return []
+        tableByCell.set(cell, id)
+        return [cellId]
+      })
+      return { section, cells } as const
+    })
+    const columnCount = rows[0]?.cells.length ?? 0
+    const columns = Array.from(table.querySelectorAll<HTMLTableColElement>(':scope > colgroup > col'))
+    const columnGroups = Array.from(table.querySelectorAll<HTMLTableColElement>(':scope > colgroup'))
+    const editableTracks = columnCount > 0 &&
+      columnGroups.every(group => group.children.length > 0) &&
+      (!columns.length || (columns.length === columnCount && columns.every(col => col.span === 1 && col.hasAttribute(markerAttribute)))) &&
+      Array.from(table.rows).every((row, index) => {
+        const rowId = row.getAttribute(markerAttribute)
+        return !!rowId && !!recordById.get(rowId)?.completeEnd && rows[index]?.cells.length === columnCount &&
+          row.cells.length === columnCount && Array.from(row.cells).every(cell => {
+          const cellId = cell.getAttribute(markerAttribute)
+          return cell.colSpan === 1 && cell.rowSpan === 1 && !!cellId && !!recordById.get(cellId)?.completeEnd
+        })
+      })
+    return { id, rows, editableTracks }
+  })
+  const selected = [...new Set([...leaves, ...tableByCell.keys(), ...containers])]
   const selectedIds = new Set(selected.map(element => element.getAttribute(markerAttribute)))
   const targets: HtmlLayoutTarget[] = selected.map(element => {
     const id = element.getAttribute(markerAttribute) ?? ''
@@ -301,6 +351,8 @@ const parseLayout = (source: string) => {
       textEditable: !container && tagName !== 'img' && hasPlainTextSource(source, record, text) &&
         Array.from(element.childNodes).every(node => node.nodeType === Node.TEXT_NODE),
       src: tagName === 'img' ? element.getAttribute('src') ?? '' : undefined,
+      tableId: tableByCell.get(element),
+      zIndex: /^-?\d+$/.test(element.style.zIndex) ? Number(element.style.zIndex) : undefined,
       canMovePrevious: neighborAvailable(element.previousElementSibling),
       canMoveNext: neighborAvailable(element.nextElementSibling)
     }
@@ -313,7 +365,7 @@ const parseLayout = (source: string) => {
     Array.from(template.content.childNodes).every(node => node === root ||
       node.nodeType === Node.COMMENT_NODE || (node.nodeType === Node.TEXT_NODE && !node.textContent?.trim())))
   const rootTargetId = rootContainer && selectedIds.has(rootId ?? null) ? rootId ?? undefined : undefined
-  return { template, markerAttribute, targets, elements, recordById, rootContainer, rootId, rootTargetId }
+  return { template, markerAttribute, targets, tables, elements, recordById, rootContainer, rootId, rootTargetId }
 }
 
 /** Paths and markers belong to this source snapshot; preview URLs never enter the saved source. */
@@ -340,6 +392,7 @@ export const createHtmlLayoutDocument = (
     previewHtml: parsed.template.innerHTML,
     markerAttribute: parsed.markerAttribute,
     targets: parsed.targets,
+    tables: parsed.tables,
     rootContainer: parsed.rootContainer,
     rootTargetId: parsed.rootTargetId
   }
@@ -355,6 +408,12 @@ const pixels = (value: number, positive = false): string => {
   if (!Number.isFinite(value) || (positive && value <= 0)) throw new Error('Invalid layout size or offset.')
   // Rounding measured sizes can cross Chromium's subpixel layout floor and separate snapped edges after saving.
   return `${value}px`
+}
+
+const layoutColor = (color: string | null, fallback: string): string => {
+  if (color === null) return fallback
+  if (!/^#[\da-f]{6}$/i.test(color)) throw new Error('Invalid HTML layout color.')
+  return color
 }
 
 /** Offsets are total deltas in pixels from the snapshot, rather than increments from the last edit. */
@@ -373,7 +432,7 @@ export const applyHtmlLayoutEdits = (
     const existing = element.style.getPropertyValue(property)
     if (existing !== value && !(value === '0' && existing === '0px')) {
       const declarations = styleChanges.get(id) ?? []
-      const shorthand = property.startsWith('padding-') ? 'padding' : property.startsWith('margin-') ? 'margin' : ''
+      const shorthand = ['padding', 'margin', 'border', 'background', 'font'].find(group => property.startsWith(group + '-'))
       const priority = element.style.getPropertyPriority(property) || (shorthand ? element.style.getPropertyPriority(shorthand) : '')
       const declaration = `${property}: ${value}${priority ? ' !important' : ''};`
       if (!declarations.includes(declaration)) declarations.push(declaration)
@@ -385,13 +444,61 @@ export const applyHtmlLayoutEdits = (
     const record = parsed.recordById.get(edit.id)
     const element = parsed.elements.get(edit.id)
     if (!target || !record || !element) throw new Error('The HTML layout target is no longer available.')
-    if (edit.fontSize !== undefined || edit.color !== undefined) {
+    if (edit.fontSize !== undefined || edit.fontFamily !== undefined || edit.color !== undefined) {
       if (target.kind !== 'text') throw new Error('Only text objects can have text styles.')
       if (edit.fontSize !== undefined) setStyle(edit.id, element, 'font-size', pixels(edit.fontSize, true))
-      if (edit.color !== undefined) {
-        if (!/^#[\da-f]{6}$/i.test(edit.color)) throw new Error('Invalid text color.')
-        setStyle(edit.id, element, 'color', edit.color)
+      if (edit.color !== undefined) setStyle(edit.id, element, 'color', layoutColor(edit.color, 'inherit'))
+      if (edit.fontFamily !== undefined) {
+        if (!HTML_LAYOUT_FONT_FAMILIES.some(family => family === edit.fontFamily)) throw new Error('Invalid font family.')
+        setStyle(edit.id, element, 'font-family', edit.fontFamily)
       }
+    }
+    if (edit.backgroundColor !== undefined) {
+      if (!target.tableId) throw new Error('Only table cells can have scoped fill colors.')
+      setStyle(edit.id, element, 'background-color', layoutColor(edit.backgroundColor, 'transparent'))
+    }
+    if (edit.gridColor !== undefined || edit.columnWidths || edit.rowHeights) {
+      const table = parsed.tables.find(table => table.id === target.id)
+      if (!table || !(element instanceof HTMLTableElement)) throw new Error('The HTML table is no longer available.')
+      if (edit.gridColor !== undefined) {
+        setStyle(edit.id, element, HTML_LAYOUT_GRID_COLOR, layoutColor(edit.gridColor, '#808080'))
+        if (element.style.getPropertyValue('border-style')) {
+          setStyle(edit.id, element, 'border-color', `var(${HTML_LAYOUT_GRID_COLOR})`)
+        }
+        for (const cell of htmlLayoutTableCells(element)) {
+          const id = cell.getAttribute(parsed.markerAttribute)
+          if (id) for (const [property, value] of tableCellGridStyles(cell)) setStyle(id, cell, property, value)
+        }
+      }
+      if (edit.columnWidths || edit.rowHeights) {
+        if (!table.editableTracks) throw new Error('This table does not have independent row and column tracks.')
+        if (edit.columnWidths) {
+          if (edit.columnWidths.length !== table.rows[0]?.cells.length) throw new Error('Invalid column count.')
+          const widths = edit.columnWidths.map(width => pixels(width, true))
+          const columns = Array.from(element.querySelectorAll<HTMLElement>(':scope > colgroup > col'))
+          setStyle(edit.id, element, 'table-layout', 'fixed')
+          if (columns.length) {
+            columns.forEach((column, index) => setStyle(column.getAttribute(parsed.markerAttribute)!, column, 'width', widths[index]!))
+          } else {
+            const captionId = element.caption?.getAttribute(parsed.markerAttribute)
+            const afterCaption = captionId && parsed.recordById.get(captionId)?.completeEnd
+            const insertion = afterCaption || record.openingEnd
+            const markup = widths.map(width => `<col style="width: ${width};">`).join('')
+            patches.push({ start: insertion, end: insertion, value: `<colgroup>${markup}</colgroup>` })
+          }
+        }
+        if (edit.rowHeights) {
+          if (edit.rowHeights.length !== table.rows.length) throw new Error('Invalid row count.')
+          setStyle(edit.id, element, 'height', 'auto')
+          Array.from(element.rows).forEach((row, index) => {
+            setStyle(row.getAttribute(parsed.markerAttribute)!, row, 'height', pixels(edit.rowHeights![index]!, true))
+          })
+        }
+      }
+    }
+    if (edit.zIndex !== undefined) {
+      if (!Number.isInteger(edit.zIndex)) throw new Error('Invalid layer index.')
+      setStyle(edit.id, element, 'z-index', String(edit.zIndex))
     }
     if (edit.position !== undefined) {
       if (!['relative', 'absolute'].includes(edit.position)) throw new Error('Invalid layout position.')
@@ -404,9 +511,10 @@ export const applyHtmlLayoutEdits = (
       setStyle(edit.id, element, 'min-width', '0')
       setStyle(edit.id, element, 'max-width', 'none')
     }
-    if (edit.height !== undefined) {
-      setStyle(edit.id, element, 'height', pixels(edit.height, true))
-      setStyle(edit.id, element, 'min-height', '0')
+    const flowText = edit.textFlow && target.textEditable
+    if (edit.height !== undefined && !edit.rowHeights) {
+      setStyle(edit.id, element, 'height', flowText ? 'auto' : pixels(edit.height, true))
+      setStyle(edit.id, element, 'min-height', flowText ? pixels(edit.height, true) : '0')
       setStyle(edit.id, element, 'max-height', 'none')
       if (target.kind === 'container' && !edit.preservePaddingBottom) setStyle(edit.id, element, 'padding-bottom', '0')
     }
@@ -438,6 +546,16 @@ export const applyHtmlLayoutEdits = (
     if (edit.text !== undefined && edit.text !== target.text) {
       if (!target.textEditable || record.contentEnd === null) throw new Error('Only plain text blocks can be edited.')
       patches.push({ start: record.openingEnd, end: record.contentEnd, value: escapeText(edit.text) })
+    }
+    if (flowText) {
+      setStyle(edit.id, element, 'white-space', 'pre-wrap')
+      setStyle(edit.id, element, 'overflow-wrap', 'anywhere')
+      setStyle(edit.id, element, 'overflow', 'visible')
+      setStyle(edit.id, element, 'max-height', 'none')
+      if (!target.tableId && edit.height === undefined && element.style.height) {
+        setStyle(edit.id, element, 'height', 'auto')
+        if (/^\d+(?:\.\d+)?px$/.test(element.style.height)) setStyle(edit.id, element, 'min-height', element.style.height)
+      }
     }
   }
   if (styleChanges.size && options.minimumHeight !== undefined && parsed.rootContainer && parsed.rootId) {
@@ -493,9 +611,9 @@ export const reorderHtmlLayoutTarget = (
   ])
 }
 
-const removeHtmlLayoutObject = (model: HtmlLayoutDocument, id: string, kind: 'image' | 'text'): string => {
+const removeHtmlLayoutObject = (model: HtmlLayoutDocument, id: string, kind: HtmlLayoutTarget['kind']): string => {
   const parsed = parseLayout(model.source)
-  if (parsed.targets.find(target => target.id === id)?.kind !== kind || (kind === 'text' && id === parsed.rootId)) return model.source
+  if (parsed.targets.find(target => target.id === id)?.kind !== kind || (kind !== 'image' && id === parsed.rootId)) return model.source
   const record = parsed.recordById.get(id)
   if (!record?.completeEnd) return model.source
   const lineStart = model.source.lastIndexOf('\n', record.start - 1) + 1
@@ -507,6 +625,15 @@ const removeHtmlLayoutObject = (model: HtmlLayoutDocument, id: string, kind: 'im
 export const removeHtmlLayoutImage = (model: HtmlLayoutDocument, id: string): string => removeHtmlLayoutObject(model, id, 'image')
 
 export const removeHtmlLayoutText = (model: HtmlLayoutDocument, id: string): string => removeHtmlLayoutObject(model, id, 'text')
+
+export const removeHtmlLayoutTable = (model: HtmlLayoutDocument, id: string): string => {
+  if (!model.tables.some(table => table.id === id)) return model.source
+  if (id !== model.rootTargetId) return removeHtmlLayoutObject(model, id, 'container')
+  const record = parseLayout(model.source).recordById.get(id)
+  return record?.completeEnd
+    ? applyPatches(model.source, [{ start: record.start, end: record.completeEnd, value: '<div></div>' }])
+    : model.source
+}
 
 const appendHtmlLayoutObject = (model: HtmlLayoutDocument, markup: string): string => {
   const parsed = parseLayout(model.source)
@@ -545,6 +672,90 @@ export const appendHtmlLayoutText = (model: HtmlLayoutDocument, text: { text: st
     ? applyHtmlLayoutEdits(model, [{ id: model.rootTargetId, position: 'relative' }])
     : model.source
   const positionedModel = positionedSource === model.source ? model : createHtmlLayoutDocument(positionedSource)
-  const style = 'display: inline-block; white-space: pre-wrap; overflow-wrap: anywhere; overflow: hidden; max-width: 100%; max-height: 100%; font-size: 16px; line-height: 1.5; min-height: 1.5em; ' + (text.style ?? '')
+  const style = 'display: inline-block; white-space: pre-wrap; overflow-wrap: anywhere; max-width: 100%; font-size: 16px; line-height: 1.5; min-height: 1.5em; ' + (text.style ?? '')
   return appendHtmlLayoutObject(positionedModel, `<span data-mt-textbox="true" style="${escapeAttribute(style, '"')}">${escapeText(text.text)}</span>`)
+}
+
+const tableCellMarkup = (tag: 'th' | 'td', content = ''): string =>
+  `<${tag} style="border: 1px solid var(${HTML_LAYOUT_GRID_COLOR}, #808080); padding: 6px; vertical-align: top; white-space: pre-wrap; overflow-wrap: anywhere;">${escapeText(content)}</${tag}>`
+
+/** A paragraph can contain captions and pictures, but an HTML parser closes it before a table. */
+export function appendHtmlLayoutTable(model: HtmlLayoutDocument, style: string): string {
+  const root = model.rootTargetId && parseLayout(model.source).recordById.get(model.rootTargetId)
+  if (root && root.tagName === 'p' && root.contentEnd !== null) {
+    const source = applyPatches(model.source, [
+      { start: root.start + 1, end: root.nameEnd, value: 'div' },
+      { start: root.contentEnd + 2, end: root.contentEnd + 3, value: 'div' }
+    ])
+    model = createHtmlLayoutDocument(source)
+  }
+  const header = ['项目', '数值'].map(value => tableCellMarkup('th', value)).join('')
+  const body = tableCellMarkup('td') + tableCellMarkup('td')
+  return appendHtmlLayoutObject(model, `<table style="border-collapse: collapse; ${escapeAttribute(style, '"')}"><thead><tr>${header}</tr></thead><tbody><tr>${body}</tr><tr>${body}</tr></tbody></table>`)
+}
+
+export function wrapHtmlLayoutFrame(model: HtmlLayoutDocument, style: string): HtmlLayoutDocument {
+  const lineBreak = model.source.includes('\r\n') ? '\r\n' : '\n'
+  const separator = model.source.endsWith('\n') ? '' : lineBreak
+  return createHtmlLayoutDocument(`<div style="${escapeAttribute(style, '"')}">${lineBreak}${model.source}${separator}</div>`)
+}
+
+export type HtmlLayoutTableAction = 'add-row' | 'remove-row' | 'add-column' | 'remove-column'
+
+export function editHtmlLayoutTableStructure(
+  model: HtmlLayoutDocument, id: string, action: HtmlLayoutTableAction, cellId?: string
+): string {
+  const parsed = parseLayout(model.source)
+  const table = parsed.elements.get(id)
+  const spec = parsed.tables.find(table => table.id === id)
+  if (!(table instanceof HTMLTableElement) || !spec) return model.source
+  const recordFor = (element: Element | null | undefined) => parsed.recordById.get(element?.getAttribute(parsed.markerAttribute) ?? '')
+  const tableRecord = recordFor(table)
+  if (tableRecord?.contentEnd == null) return model.source
+  const selected = cellId && spec.rows.some(row => row.cells.includes(cellId)) ? parsed.elements.get(cellId) : undefined
+  const cell = selected instanceof HTMLTableCellElement ? selected : undefined
+  const rows = Array.from(table.rows)
+  if (!spec.editableTracks && (rows.length || action !== 'add-row')) return model.source
+  const columns = Array.from(table.querySelectorAll<HTMLTableColElement>(':scope > colgroup > col'))
+  const patches: SourcePatch[] = []
+  if (action === 'add-row' || action === 'remove-row') {
+    const bodyRows = rows.filter(row => row.parentElement?.tagName === 'TBODY')
+    const current = cell?.parentElement
+    const selectedRow = current instanceof HTMLTableRowElement && bodyRows.includes(current) ? current : undefined
+    if (action === 'remove-row') {
+      const record = recordFor(selectedRow)
+      if (!record?.completeEnd || bodyRows.length <= 1) return model.source
+      patches.push({ start: record.start, end: record.completeEnd, value: '' })
+    } else {
+      const count = rows[0]?.cells.length || 2
+      const row = `<tr>${tableCellMarkup('td').repeat(count)}</tr>`
+      const afterRow = recordFor(selectedRow ?? bodyRows.at(-1))?.completeEnd
+      const body = recordFor(table.tBodies[0])
+      const point = afterRow ?? body?.contentEnd ?? recordFor(table.tFoot)?.start ?? tableRecord.contentEnd
+      patches.push({ start: point, end: point, value: afterRow || body?.contentEnd != null ? row : `<tbody>${row}</tbody>` })
+    }
+  } else {
+    const index = cell?.cellIndex ?? (rows[0]?.cells.length ?? 1) - 1
+    if (action === 'remove-column' && (!cell || (rows[0]?.cells.length ?? 0) <= 1)) return model.source
+    for (const row of rows) {
+      const anchor = row.cells[index]
+      const record = recordFor(anchor)
+      if (!record?.completeEnd) return model.source
+      patches.push(action === 'remove-column'
+        ? { start: record.start, end: record.completeEnd, value: '' }
+        : {
+          start: record.completeEnd,
+          end: record.completeEnd,
+          value: tableCellMarkup(anchor?.tagName === 'TH' ? 'th' : 'td')
+        })
+    }
+    if (columns.length) {
+      const record = recordFor(columns[index])
+      if (!record?.completeEnd) return model.source
+      patches.push(action === 'remove-column'
+        ? { start: record.start, end: record.completeEnd, value: '' }
+        : { start: record.completeEnd, end: record.completeEnd, value: '<col>' })
+    }
+  }
+  return applyPatches(model.source, patches)
 }

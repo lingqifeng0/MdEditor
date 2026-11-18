@@ -55,14 +55,20 @@ describe('image resize bar after its image is removed', () => {
         vi.useFakeTimers();
         const eventCenter = setup();
 
-        eventCenter.emit('muya-transformer', { block: {}, reference: imageContainer(), imageInfo: {} });
+        const reference = imageContainer();
+        const image = reference.querySelector('img')!;
+        image.setAttribute('width', '100');
+        eventCenter.emit('muya-transformer', { block: {}, reference, imageInfo: {} });
         vi.runAllTimers();
         const handle = document.querySelector<HTMLElement>('.mu-transformer .bar.right')!;
-        handle.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+        handle.dispatchEvent(mouseEvent('mousedown', 0));
+        document.body.dispatchEvent(mouseMove(70));
+        expect(image.getAttribute('width')).toBe('70');
 
         eventCenter.emit('muya-transformer', { reference: null });
 
         expect(eventCenter.events.some(e => e.event === 'mousemove')).toBe(false);
+        expect(image.getAttribute('width')).toBe('100');
 
         const listenerErrors: unknown[] = [];
         const onError = (event: ErrorEvent) => listenerErrors.push(event.error ?? event.message);

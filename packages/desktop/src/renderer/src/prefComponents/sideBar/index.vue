@@ -59,7 +59,7 @@
 </template>
 <script setup lang="ts">
 import { getCategory, getTranslatedSearchContent } from './config'
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Search } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
@@ -82,7 +82,7 @@ interface CategoryItem {
   path: string
 }
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const router = useRouter()
 const route = useRoute()
@@ -115,7 +115,11 @@ const createFilter = (queryString: string): ((restaurant: SearchEntry) => boolea
   }
 }
 
-const loadAll = (): SearchEntry[] => getTranslatedSearchContent()
+const updateSearch = (): void => {
+  restaurants.value = getTranslatedSearchContent()
+}
+
+watch(locale, updateSearch)
 
 const handleSelect = (item: SearchEntry | null | undefined): void => {
   // Use a safe routeCategory to avoid a blank screen caused by invalid categories
@@ -145,19 +149,15 @@ const onIpcCategoryChange = (_event: unknown, category: unknown): void => {
 }
 
 onMounted(() => {
-  restaurants.value = loadAll()
+  updateSearch()
   initializePluginPlatform().catch(error => console.warn('Plugin settings:', error))
   window.electron.ipcRenderer.on('settings::change-tab', onIpcCategoryChange)
   // Listen for language changes and refresh the search index
-  const languageChanged = (): void => {
-    restaurants.value = loadAll()
-  }
-  window.addEventListener('languageChanged', languageChanged)
-  // Remove listener on unmount
-  onUnmounted(() => window.removeEventListener('languageChanged', languageChanged))
+  window.addEventListener('languageChanged', updateSearch)
 })
 
 onUnmounted(() => {
+  window.removeEventListener('languageChanged', updateSearch)
   // removeAllListeners takes a single channel argument. The handler ref was
   // passed historically but ignored by the typed bridge; removing only the
   // handler we registered would require holding the unsubscribe callback

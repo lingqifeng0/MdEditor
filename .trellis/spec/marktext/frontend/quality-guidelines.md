@@ -95,3 +95,5 @@ const scheduleMeasure = (): void => {
 A layout observer that is correct for initial rendering can still make long sessions sluggish when it is attached to the entire editor subtree. Treat observer scope and invalidation timing as part of the component's performance contract.
 
 Do not remove reading-position feedback to satisfy performance counters. The 2026-10-28 regression came from treating a passive gray rail as an acceptable substitute for the requested blue current-heading marker, and from testing that incorrect assumption. Validate behavior and cost together against the user's recording.
+
+Apply display-only adjustments without filtering the editor scroll container. A CSS filter on that ancestor changes how fixed controls are positioned. Dim the window with a fixed, pointer-transparent overlay, warm the theme through color tokens, and filter document images on the image elements. Leave the filters inactive at neutral settings and during print.

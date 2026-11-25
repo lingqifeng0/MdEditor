@@ -429,6 +429,12 @@
         "plantumlServer": "PlantUML 服务器 URL",
         "theme": "选择 MdEditor 中使用的主题",
         "followSystemTheme": "跟随系统主题",
+        "windowBrightness": "全局亮度",
+        "windowEyeComfort": "全局护眼模式",
+        "windowWarmth": "全局暖色强度",
+        "imageBrightness": "图片亮度",
+        "imageEyeComfort": "图片护眼模式",
+        "imageWarmth": "图片暖色强度",
         "lightModeTheme": "系统处于浅色模式时使用的主题",
         "darkModeTheme": "系统处于深色模式时使用的主题",
         "spellcheckerEnabled": "是否启用拼写检查",
@@ -726,6 +732,13 @@
       "modeThemes": "主题选择",
       "lightModeTheme": "浅色模式主题",
       "darkModeTheme": "深色模式主题",
+      "display": {
+        "window": "全局",
+        "image": "图片",
+        "brightness": "亮度",
+        "eyeComfort": "护眼模式",
+        "warmth": "暖色强度"
+      },
       "customCss": "自定义 CSS",
       "importCustomThemes": "导入自定义主题",
       "importTheme": "导入主题",
@@ -979,7 +992,7 @@
       "exportSuccessMessage": "已成功导出“{name}”！",
       "exportLinkedMediaMessage": "已导出“{name}”。该格式以链接方式引用图片而不内嵌，请让图片与文件放在一起，分享时带上整个文件夹。",
       "fileRemovedOnDisk": "“{name}” 已在磁盘上被删除。",
-      "fileChangedOnDisk": "“{name}” 已在磁盘上发生变更。是否重新加载？"
+      "fileChangedOnDisk": "「{name}」已在别处更新。用新版替换未保存的内容吗？"
     }
   },
   "floatingToc": {

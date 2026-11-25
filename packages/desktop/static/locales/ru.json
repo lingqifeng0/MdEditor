@@ -428,6 +428,12 @@
         "plantumlServer": "URL сервера PlantUML",
         "theme": "Выберите тему, используемую в MdEditor",
         "followSystemTheme": "Следовать системной теме",
+        "windowBrightness": "Яркость окна",
+        "windowEyeComfort": "Комфорт для глаз во всём окне",
+        "windowWarmth": "Теплота цвета окна",
+        "imageBrightness": "Яркость изображений",
+        "imageEyeComfort": "Комфорт для глаз при просмотре изображений",
+        "imageWarmth": "Теплота цвета изображений",
         "lightModeTheme": "Тема для светлого режима системы",
         "darkModeTheme": "Тема для тёмного режима системы",
         "spellcheckerEnabled": "Включена ли проверка орфографии",
@@ -726,6 +732,13 @@
       "modeThemes": "Выбор темы",
       "lightModeTheme": "Тема светлого режима",
       "darkModeTheme": "Тема тёмного режима",
+      "display": {
+        "window": "Всё окно",
+        "image": "Изображения",
+        "brightness": "Яркость",
+        "eyeComfort": "Комфорт для глаз",
+        "warmth": "Теплота цвета"
+      },
       "customCss": "Пользовательский CSS",
       "importCustomThemes": "Импорт пользовательских тем",
       "importTheme": "Импортировать тему",
@@ -979,7 +992,7 @@
       "exportSuccessMessage": "\"{name}\" успешно экспортирован!",
       "exportLinkedMediaMessage": "\"{name}\" экспортирован. Этот формат связывает изображения вместо их встраивания, поэтому держите изображения рядом с файлом и делитесь всей папкой.",
       "fileRemovedOnDisk": "\"{name}\" был удалён с диска.",
-      "fileChangedOnDisk": "\"{name}\" был изменён на диске. Перезагрузить его?"
+      "fileChangedOnDisk": "Файл «{name}» был обновлён вне редактора. Заменить несохранённые изменения новой версией?"
     }
   },
   "spellchecker": {

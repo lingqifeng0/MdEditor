@@ -429,6 +429,12 @@
         "plantumlServer": "PlantUML サーバーの URL",
         "theme": "MdEditor で使用するテーマの選択",
         "followSystemTheme": "システムのテーマに従う",
+        "windowBrightness": "全体の明るさ",
+        "windowEyeComfort": "全体の目にやさしい表示",
+        "windowWarmth": "全体の暖色の強さ",
+        "imageBrightness": "画像の明るさ",
+        "imageEyeComfort": "画像の目にやさしい表示",
+        "imageWarmth": "画像の暖色の強さ",
         "lightModeTheme": "システムがライトモードの時に使用するテーマ",
         "darkModeTheme": "システムがダークモードの時に使用するテーマ",
         "spellcheckerEnabled": "スペルチェックが有効かどうか",
@@ -726,6 +732,13 @@
       "modeThemes": "テーマの選択",
       "lightModeTheme": "ライトモードのテーマ",
       "darkModeTheme": "ダークモードのテーマ",
+      "display": {
+        "window": "全体",
+        "image": "画像",
+        "brightness": "明るさ",
+        "eyeComfort": "目にやさしい表示",
+        "warmth": "暖色の強さ"
+      },
       "customCss": "カスタム CSS",
       "importCustomThemes": "カスタムテーマのインポート",
       "importTheme": "テーマをインポート",
@@ -979,7 +992,7 @@
       "exportSuccessMessage": "「{name}」を正常にエクスポートしました！",
       "exportLinkedMediaMessage": "「{name}」をエクスポートしました。この形式は画像を埋め込まずファイル参照のままにするため、画像をファイルと同じ場所に置き、フォルダごと共有してください。",
       "fileRemovedOnDisk": "「{name}」はディスク上で削除されました。",
-      "fileChangedOnDisk": "「{name}」はディスク上で変更されました。再読み込みしますか？"
+      "fileChangedOnDisk": "「{name}」が別の場所で更新されました。未保存の変更を新しい版で置き換えますか？"
     }
   },
   "spellchecker": {

@@ -5,30 +5,37 @@
     :class="currentNotification.style"
     :style="{ 'max-width': `calc(100vw - ${effectiveSideBarWidth}px)` }"
   >
-    <div class="msg">
-      {{ currentNotification.msg }}
-    </div>
-    <div class="controls">
-      <div>
-        <span
-          v-if="currentNotification.showConfirm"
-          class="inline-button"
-          @click.stop="handleClick(true)"
-        >
-          {{ t('common.ok') }}
-        </span>
-        <span
-          class="inline-button"
-          @click.stop="handleClick(false)"
-        >
-          <el-icon
-            class="close-icon"
-            :size="12"
-          >
-            <Close />
-          </el-icon>
-        </span>
+    <div
+      class="notification-content"
+      :class="{ 'has-confirm': currentNotification.showConfirm }"
+    >
+      <div
+        class="msg"
+        role="status"
+      >
+        {{ currentNotification.msg }}
       </div>
+      <button
+        v-if="currentNotification.showConfirm"
+        type="button"
+        class="inline-button confirm"
+        @click.stop="handleClick(true)"
+      >
+        {{ t('common.ok') }}
+      </button>
+      <button
+        type="button"
+        class="inline-button dismiss"
+        :aria-label="t('dialog.close')"
+        @click.stop="handleClick(false)"
+      >
+        <el-icon
+          :size="12"
+          aria-hidden="true"
+        >
+          <Close />
+        </el-icon>
+      </button>
     </div>
   </div>
 </template>
@@ -73,15 +80,12 @@ const handleClick = (status: boolean) => {
 <style scoped>
 .editor-notifications {
   position: relative;
-  display: flex;
-  flex-direction: row;
-  max-height: 100px;
+  container: tab-notification / inline-size;
   margin-top: 4px;
   background: var(--notificationPrimaryBg);
   color: var(--notificationPrimaryColor);
   padding: 8px 10px;
   user-select: none;
-  overflow: hidden;
   &.warn {
     background: var(--notificationWarningBg);
     color: var(--notificationWarningColor);
@@ -91,34 +95,63 @@ const handleClick = (status: boolean) => {
     color: var(--notificationErrorColor);
   }
 }
-.msg {
-  font-size: 13px;
-  flex: 1;
+.notification-content {
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr) auto;
+  grid-template-areas: "message . dismiss";
+  align-items: center;
+  gap: 8px;
+
+  &.has-confirm {
+    grid-template-columns: minmax(0, max-content) auto minmax(20px, 1fr) auto;
+    grid-template-areas: "message confirm . dismiss";
+  }
 }
-.controls {
-  display: flex;
-  flex-direction: column;
+.msg {
+  grid-area: message;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.inline-button {
+  display: inline-flex;
   justify-content: center;
-  & > div {
-    display: flex;
-    flex-direction: row;
+  align-items: center;
+  min-height: 26px;
+  padding: 3px 10px;
+  font: inherit;
+  font-size: 12px;
+  color: inherit;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover {
+    background: color-mix(in srgb, currentColor 12%, transparent);
   }
-  & .inline-button:not(:last-child) {
-    margin-right: 3px;
+  &:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
   }
-  & .inline-button {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 24px;
-    height: 24px;
-    font-size: 12px;
-    cursor: pointer;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  & .inline-button:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.6);
+}
+.confirm {
+  grid-area: confirm;
+  justify-self: start;
+}
+.dismiss {
+  grid-area: dismiss;
+  align-self: start;
+  width: 26px;
+  padding: 0;
+  border-color: transparent;
+}
+@container tab-notification (max-width: 440px) {
+  .notification-content.has-confirm {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "message dismiss"
+      "confirm .";
   }
 }
 </style>

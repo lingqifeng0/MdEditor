@@ -429,6 +429,12 @@
         "plantumlServer": "URL del servidor PlantUML",
         "theme": "Seleccionar el tema usado en MdEditor",
         "followSystemTheme": "Seguir tema del sistema",
+        "windowBrightness": "Brillo general",
+        "windowEyeComfort": "Descanso visual general",
+        "windowWarmth": "Calidez general",
+        "imageBrightness": "Brillo de las imágenes",
+        "imageEyeComfort": "Descanso visual para las imágenes",
+        "imageWarmth": "Calidez de las imágenes",
         "lightModeTheme": "Tema a usar cuando el sistema está en modo claro",
         "darkModeTheme": "Tema a usar cuando el sistema está en modo oscuro",
         "spellcheckerEnabled": "Si la verificación ortográfica está habilitada",
@@ -726,6 +732,13 @@
       "modeThemes": "Selección de Tema",
       "lightModeTheme": "Tema de modo claro",
       "darkModeTheme": "Tema de modo oscuro",
+      "display": {
+        "window": "General",
+        "image": "Imágenes",
+        "brightness": "Brillo",
+        "eyeComfort": "Descanso visual",
+        "warmth": "Calidez"
+      },
       "customCss": "CSS Personalizado",
       "importCustomThemes": "Importar temas personalizados",
       "importTheme": "Importar Tema",
@@ -979,7 +992,7 @@
       "exportSuccessMessage": "¡Se exportó «{name}» correctamente!",
       "exportLinkedMediaMessage": "Se exportó \"{name}\". Este formato enlaza las imágenes en lugar de incrustarlas: mantén las imágenes junto al archivo y comparte la carpeta completa.",
       "fileRemovedOnDisk": "«{name}» ha sido eliminado del disco.",
-      "fileChangedOnDisk": "«{name}» ha cambiado en el disco. ¿Deseas recargarlo?"
+      "fileChangedOnDisk": "«{name}» se ha actualizado en otro lugar. ¿Reemplazar los cambios sin guardar por la nueva versión?"
     }
   },
   "spellchecker": {

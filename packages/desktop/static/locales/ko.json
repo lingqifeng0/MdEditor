@@ -429,6 +429,12 @@
         "plantumlServer": "PlantUML 서버 URL",
         "theme": "MdEditor에서 사용할 테마 선택",
         "followSystemTheme": "시스템 테마 따르기",
+        "windowBrightness": "전체 밝기",
+        "windowEyeComfort": "전체 눈 보호 모드",
+        "windowWarmth": "전체 따뜻한 색조 강도",
+        "imageBrightness": "이미지 밝기",
+        "imageEyeComfort": "이미지 눈 보호 모드",
+        "imageWarmth": "이미지의 따뜻한 색조 강도",
         "lightModeTheme": "시스템이 라이트 모드일 때 사용할 테마",
         "darkModeTheme": "시스템이 다크 모드일 때 사용할 테마",
         "spellcheckerEnabled": "맞춤법 검사가 활성화되어 있는지 여부",
@@ -726,6 +732,13 @@
       "modeThemes": "테마 선택",
       "lightModeTheme": "라이트 모드 테마",
       "darkModeTheme": "다크 모드 테마",
+      "display": {
+        "window": "전체",
+        "image": "이미지",
+        "brightness": "밝기",
+        "eyeComfort": "눈 보호 모드",
+        "warmth": "따뜻한 색조 강도"
+      },
       "customCss": "사용자 정의 CSS",
       "importCustomThemes": "사용자 정의 테마 가져오기",
       "importTheme": "테마 가져오기",
@@ -979,7 +992,7 @@
       "exportSuccessMessage": "“{name}”을(를) 성공적으로 내보냈습니다!",
       "exportLinkedMediaMessage": "\"{name}\" 내보내기 완료. 이 형식은 이미지를 포함하지 않고 파일 링크로 유지하므로, 이미지를 파일과 같은 위치에 두고 폴더 전체를 공유하세요.",
       "fileRemovedOnDisk": "“{name}”이(가) 디스크에서 삭제되었습니다.",
-      "fileChangedOnDisk": "“{name}”이(가) 디스크에서 변경되었습니다. 다시 로드하시겠습니까?"
+      "fileChangedOnDisk": "“{name}” 파일이 다른 곳에서 업데이트되었습니다. 저장하지 않은 변경 사항을 새 버전으로 바꾸시겠습니까?"
     }
   },
   "spellchecker": {

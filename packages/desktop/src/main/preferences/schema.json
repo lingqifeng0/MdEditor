@@ -333,6 +333,44 @@
     "type": "string",
     "default": "light"
   },
+  "windowBrightness": {
+    "description": "Theme--Global brightness",
+    "type": "integer",
+    "minimum": 50,
+    "maximum": 100,
+    "default": 100
+  },
+  "windowEyeComfort": {
+    "description": "Theme--Global eye comfort",
+    "type": "boolean",
+    "default": false
+  },
+  "windowWarmth": {
+    "description": "Theme--Global warmth",
+    "type": "integer",
+    "minimum": 0,
+    "maximum": 100,
+    "default": 40
+  },
+  "imageBrightness": {
+    "description": "Theme--Image brightness",
+    "type": "integer",
+    "minimum": 40,
+    "maximum": 100,
+    "default": 100
+  },
+  "imageEyeComfort": {
+    "description": "Theme--Image eye comfort",
+    "type": "boolean",
+    "default": false
+  },
+  "imageWarmth": {
+    "description": "Theme--Image warmth",
+    "type": "integer",
+    "minimum": 0,
+    "maximum": 100,
+    "default": 40
+  },
   "followSystemTheme": {
     "description": "Theme--Use separate theme in dark mode.",
     "type": "boolean",

@@ -72,6 +72,12 @@
   "lightModeTheme": "light",
   "darkModeTheme": "dark",
   "customCss": "",
+  "windowBrightness": 100,
+  "windowEyeComfort": false,
+  "windowWarmth": 40,
+  "imageBrightness": 100,
+  "imageEyeComfort": false,
+  "imageWarmth": 40,
 
   "spellcheckerEnabled": false,
   "spellcheckerNoUnderline": false,

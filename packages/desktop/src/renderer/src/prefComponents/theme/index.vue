@@ -1,6 +1,7 @@
 <template>
   <div class="pref-theme">
     <h4>{{ t('preferences.theme.title') }}</h4>
+    <display-settings />
     <section class="offcial-themes">
       <div
         v-for="themeItem of themes"
@@ -99,6 +100,7 @@ import Bool from '../common/bool/index.vue'
 import CurSelect from '../common/select/index.vue'
 import Separator from '../common/separator/index.vue'
 import Compound from '../common/compound/index.vue'
+import DisplaySettings from './DisplaySettings.vue'
 import type { PrefSelectOption } from '../common/types'
 
 interface ThemePreview {

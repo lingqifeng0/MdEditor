@@ -428,6 +428,12 @@
         "plantumlServer": "PlantUML server-URL",
         "theme": "Selecteer het thema voor MdEditor",
         "followSystemTheme": "Systeemthema volgen",
+        "windowBrightness": "Algemene helderheid",
+        "windowEyeComfort": "Algemeen oogcomfort",
+        "windowWarmth": "Algemene kleurwarmte",
+        "imageBrightness": "Helderheid van afbeeldingen",
+        "imageEyeComfort": "Oogcomfort voor afbeeldingen",
+        "imageWarmth": "Kleurwarmte van afbeeldingen",
         "lightModeTheme": "Thema voor lichte modus",
         "darkModeTheme": "Thema voor donkere modus",
         "spellcheckerEnabled": "Spellingcontrole inschakelen",
@@ -726,6 +732,13 @@
       "modeThemes": "Themaselectie",
       "lightModeTheme": "Thema lichte modus",
       "darkModeTheme": "Thema donkere modus",
+      "display": {
+        "window": "Algemeen",
+        "image": "Afbeeldingen",
+        "brightness": "Helderheid",
+        "eyeComfort": "Oogcomfort",
+        "warmth": "Kleurwarmte"
+      },
       "customCss": "Aangepaste CSS",
       "importCustomThemes": "Aangepaste thema's importeren",
       "importTheme": "Thema importeren",
@@ -979,7 +992,7 @@
       "exportSuccessMessage": "\"{name}\" is succesvol geëxporteerd!",
       "exportLinkedMediaMessage": "\"{name}\" is geëxporteerd. Deze indeling verwijst naar afbeeldingen in plaats van ze in te sluiten — houd de afbeeldingen bij het bestand en deel de hele map.",
       "fileRemovedOnDisk": "\"{name}\" is verwijderd van schijf.",
-      "fileChangedOnDisk": "\"{name}\" is gewijzigd op schijf. Wil je het opnieuw laden?"
+      "fileChangedOnDisk": "“{name}” is elders bijgewerkt. Niet-opgeslagen wijzigingen vervangen door de nieuwe versie?"
     }
   },
   "spellchecker": {

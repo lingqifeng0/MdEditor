@@ -429,6 +429,12 @@
         "plantumlServer": "URL do servidor PlantUML",
         "theme": "Selecionar o tema usado no MdEditor",
         "followSystemTheme": "Seguir tema do sistema",
+        "windowBrightness": "Brilho global",
+        "windowEyeComfort": "Conforto visual global",
+        "windowWarmth": "Intensidade global do tom quente",
+        "imageBrightness": "Brilho das imagens",
+        "imageEyeComfort": "Conforto visual das imagens",
+        "imageWarmth": "Intensidade do tom quente das imagens",
         "lightModeTheme": "Tema a ser usado quando o sistema está no modo claro",
         "darkModeTheme": "Tema a ser usado quando o sistema está no modo escuro",
         "spellcheckerEnabled": "Se a verificação ortográfica está habilitada",
@@ -726,6 +732,13 @@
       "modeThemes": "Seleção de Tema",
       "lightModeTheme": "Tema do modo claro",
       "darkModeTheme": "Tema do modo escuro",
+      "display": {
+        "window": "Global",
+        "image": "Imagens",
+        "brightness": "Brilho",
+        "eyeComfort": "Conforto visual",
+        "warmth": "Intensidade do tom quente"
+      },
       "customCss": "CSS Personalizado",
       "importCustomThemes": "Importar temas personalizados",
       "importTheme": "Importar Tema",
@@ -979,7 +992,7 @@
       "exportSuccessMessage": "“{name}” foi exportado com sucesso!",
       "exportLinkedMediaMessage": "\"{name}\" foi exportado. Este formato liga as imagens em vez de incorporá-las: mantenha as imagens junto do arquivo e compartilhe a pasta inteira.",
       "fileRemovedOnDisk": "“{name}” foi removido no disco.",
-      "fileChangedOnDisk": "“{name}” foi alterado no disco. Deseja recarregar?"
+      "fileChangedOnDisk": "“{name}” foi atualizado em outro local. Substituir as alterações não salvas pela nova versão?"
     }
   },
   "spellchecker": {

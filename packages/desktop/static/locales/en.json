@@ -428,6 +428,12 @@
         "plantumlServer": "PlantUML server URL",
         "theme": "Select the theme used in MdEditor",
         "followSystemTheme": "Follow System Theme",
+        "windowBrightness": "Global brightness",
+        "windowEyeComfort": "Global eye comfort",
+        "windowWarmth": "Global warmth",
+        "imageBrightness": "Image brightness",
+        "imageEyeComfort": "Image eye comfort",
+        "imageWarmth": "Image warmth",
         "lightModeTheme": "Theme to use when system is in light mode",
         "darkModeTheme": "Theme to use when system is in dark mode",
         "spellcheckerEnabled": "Whether spell checking is enabled",
@@ -726,6 +732,13 @@
       "modeThemes": "Theme Selection",
       "lightModeTheme": "Light mode theme",
       "darkModeTheme": "Dark mode theme",
+      "display": {
+        "window": "Global",
+        "image": "Images",
+        "brightness": "Brightness",
+        "eyeComfort": "Eye comfort",
+        "warmth": "Warmth"
+      },
       "customCss": "Custom CSS",
       "importCustomThemes": "Import custom themes",
       "importTheme": "Import Theme",
@@ -979,7 +992,7 @@
       "exportSuccessMessage": "Exported \"{name}\" successfully!",
       "exportLinkedMediaMessage": "Exported \"{name}\". This format links images instead of embedding them, so keep the pictures next to the file and share the whole folder.",
       "fileRemovedOnDisk": "\"{name}\" has been removed on disk.",
-      "fileChangedOnDisk": "\"{name}\" has been changed on disk. Do you want to reload it?"
+      "fileChangedOnDisk": "“{name}” was updated elsewhere. Replace your unsaved changes with the new version?"
     }
   },
   "floatingToc": {

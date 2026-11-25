@@ -98,6 +98,12 @@ export interface PreferencesState {
   lightModeTheme: string
   darkModeTheme: string
   customCss: string
+  windowBrightness: number
+  windowEyeComfort: boolean
+  windowWarmth: number
+  imageBrightness: number
+  imageEyeComfort: boolean
+  imageWarmth: number
 
   // ----- Spellchecker -----
   spellcheckerEnabled: boolean
@@ -223,6 +229,12 @@ export const usePreferencesStore = defineStore('preferences', {
     lightModeTheme: 'light',
     darkModeTheme: 'dark',
     customCss: '',
+    windowBrightness: 100,
+    windowEyeComfort: false,
+    windowWarmth: 40,
+    imageBrightness: 100,
+    imageEyeComfort: false,
+    imageWarmth: 40,
 
     spellcheckerEnabled: false,
     spellcheckerNoUnderline: false,

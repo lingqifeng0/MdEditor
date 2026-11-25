@@ -427,6 +427,12 @@
         "sequenceTheme": "Dizi diyagramı teması",
         "theme": "MdEditor'te kullanılan temayı seçin",
         "followSystemTheme": "Sistem Temasını Takip Et",
+        "windowBrightness": "Genel parlaklık",
+        "windowEyeComfort": "Genel göz konforu",
+        "windowWarmth": "Genel renk sıcaklığı",
+        "imageBrightness": "Görsellerin parlaklığı",
+        "imageEyeComfort": "Görseller için göz konforu",
+        "imageWarmth": "Görsellerin renk sıcaklığı",
         "lightModeTheme": "Sistem açık moddayken kullanılacak tema",
         "darkModeTheme": "Sistem koyu moddayken kullanılacak tema",
         "spellcheckerEnabled": "Yazım denetiminin etkinleştirilip etkinleştirilmeyeceği",
@@ -726,6 +732,13 @@
       "modeThemes": "Tema Seçimi",
       "lightModeTheme": "Açık mod teması",
       "darkModeTheme": "Koyu mod teması",
+      "display": {
+        "window": "Genel",
+        "image": "Görseller",
+        "brightness": "Parlaklık",
+        "eyeComfort": "Göz konforu",
+        "warmth": "Renk sıcaklığı"
+      },
       "customCss": "Özel CSS",
       "importCustomThemes": "Özel temaları içe aktar",
       "importTheme": "Temayı İçe Aktar",
@@ -979,7 +992,7 @@
       "exportSuccessMessage": "\"{name}\" başarıyla dışa aktarıldı!",
       "exportLinkedMediaMessage": "\"{name}\" dışa aktarıldı. Bu biçim görselleri gömmez, dosya bağlantısı olarak bırakır — görselleri dosyanın yanında tutun ve klasörün tamamını paylaşın.",
       "fileRemovedOnDisk": "\"{name}\" diskten kaldırıldı.",
-      "fileChangedOnDisk": "\"{name}\" dosyasında değişiklikler var, yeniden yüklensin mi?"
+      "fileChangedOnDisk": "“{name}” başka bir yerde güncellendi. Kaydedilmemiş değişiklikler yeni sürümle değiştirilsin mi?"
     }
   },
   "spellchecker": {

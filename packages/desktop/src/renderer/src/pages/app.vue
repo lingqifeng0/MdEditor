@@ -45,6 +45,7 @@
       <import-modal />
       <image-operation-dialog />
     </div>
+    <display-appearance />
   </div>
 </template>
 
@@ -66,6 +67,7 @@ import ExportSettingDialog from '@/components/exportSettings/index.vue'
 import Rename from '@/components/rename/index.vue'
 import ImportModal from '@/components/import/index.vue'
 import ImageOperationDialog from '@/components/imageOperationDialog/index.vue'
+import DisplayAppearance from '@/components/displayAppearance/index.vue'
 import bus from '@/bus'
 import { DEFAULT_STYLE } from '@/config'
 import { useLayoutStore } from '@/store/layout'

@@ -48,4 +48,4 @@ Questions to answer:
 
 <!-- State management mistakes your team has made -->
 
-(To be filled by the team)
+User preferences need entries in `packages/desktop/static/preference.json`, the main-process preference schema, and the Pinia state. The static file supplies defaults to existing profiles. Settings search reads each schema entry's `description` and uses the category before `--` for navigation. Add the search translation for each new visible setting.

@@ -1,0 +1,2 @@
+{"file":".trellis/spec/marktext/frontend/index.md","reason":"Verify the settings and notification in the desktop renderer."}
+{"file":".trellis/spec/marktext/frontend/quality-guidelines.md","reason":"Check that the display effects preserve scrolling behavior."}

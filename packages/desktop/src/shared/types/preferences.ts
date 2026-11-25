@@ -73,6 +73,12 @@ export interface IUserPreferences {
   followSystemTheme?: boolean
   lightModeTheme?: string
   darkModeTheme?: string
+  windowBrightness?: number
+  windowEyeComfort?: boolean
+  windowWarmth?: number
+  imageBrightness?: number
+  imageEyeComfort?: boolean
+  imageWarmth?: number
   lastOpenedFolder?: string
   autoNormalizeLineEndings?: boolean
   watcherUsePolling?: boolean

@@ -34,6 +34,7 @@ import type {
 } from './files'
 import type { BufferedState as BufferedStateType } from './bufferedState'
 import type { MenuTemplate, MenuPopupPosition } from './menu'
+import type { TabWindowTransfer, DeletedNoteImage } from './tabWindow'
 import type { PluginPlatformState, DocumentSnapshot, PluginResponse, RendererPluginRequest } from '../plugin-api'
 
 export interface SaveDialogRequest {
@@ -77,6 +78,7 @@ export interface ReleaseDraftImagesRequest { noteIds: string[]; retained: ImageD
 // =================================================================
 
 export interface IpcInvokeChannels {
+  'mt::tab-window::prepare': { args: [tab: TabWindowTransfer]; ret: number | null }
   'mt::shell::reveal-link': { args: [href: string, documentPath: string]; ret: { ok: boolean; error?: string } }
   'mt::plugins::control': { args: [action: string, payload?: unknown]; ret: unknown }
   'mt::ask-for-image-path': { args: []; ret: string }
@@ -249,7 +251,7 @@ export interface IpcSendChannels {
   'mt::win::toggle-maximize': []
   'mt::win::unmaximize': []
   'mt::window-add-file-path': [windowId: number, filePath: string]
-  'mt::window-initialized': []
+  'mt::window-initialized': [transferredTabId?: string]
   'mt::window-tab-closed': [pathname: string]
   'mt::window-toggle-always-on-top': []
   'mt::window::drop': [payload: unknown]
@@ -274,6 +276,7 @@ export interface IpcSendChannels {
 // =================================================================
 
 export interface IpcSyncChannels {
+  'mt::tab-window::finish': { args: [targetId: number, accept: boolean]; ret: boolean }
   'mt::boot-info': { args: []; ret: BootInfo }
   'mt::paths::is-same-sync': { args: [a: string, b: string]; ret: boolean }
 }
@@ -283,6 +286,7 @@ export interface IpcSyncChannels {
 // =================================================================
 
 export interface IpcMainEventChannels {
+  'mt::tab-window::image-history': [deletedImages: DeletedNoteImage[]]
   'mt::plugins::state': [state: PluginPlatformState]
   'mt::plugins::request': [request: RendererPluginRequest]
   'language-changed': [language: string]

@@ -207,6 +207,9 @@
       "showInFolder": "Show In Folder"
     },
     "tabs": {
+      "moveToNewWindow": "Move to New Window",
+      "moveWindowFailed": "The new window could not be opened. The tab is still in its original window.",
+      "moveWindowChanged": "The note changed while the new window was opening. Try moving it again.",
       "close": "Close",
       "closeOthers": "Close others",
       "closeSavedTabs": "Close saved tabs",

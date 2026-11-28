@@ -4,6 +4,8 @@
 // commits. Until then, these are intentionally open structures — better an
 // imperfect surface than a placeholder that's wrong.
 
+import type { TabWindowTransfer } from './tabWindow'
+
 export type LineEnding = 'lf' | 'crlf'
 
 export interface SerializedStat {
@@ -99,6 +101,7 @@ export interface FileNotification {
   showConfirm: boolean
   style: string
   exclusiveType: string
+  diskChange?: DiskFileChange
   action: (status?: unknown) => void
 }
 
@@ -108,6 +111,19 @@ export interface FileChangeDetail {
   pathname: string
   type?: string
   [key: string]: unknown
+}
+
+export interface DiskFileChange {
+  pathname: string
+  data: {
+    isMixedLineEndings?: boolean
+    lineEnding?: LineEnding | string
+    adjustLineEndingOnSave?: boolean
+    trimTrailingNewline?: number
+    encoding?: IFileState['encoding']
+    markdown: string
+    filename: string
+  }
 }
 
 export interface TabOptions {
@@ -143,6 +159,7 @@ export interface UnsavedFile {
 }
 
 export interface BootstrapEditorConfig {
+  tabTransfer?: TabWindowTransfer
   isNewWindow?: boolean
   addBlankTab?: boolean
   /**

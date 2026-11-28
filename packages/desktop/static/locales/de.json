@@ -207,6 +207,9 @@
       "showInFolder": "Im Ordner anzeigen"
     },
     "tabs": {
+      "moveToNewWindow": "In neues Fenster verschieben",
+      "moveWindowFailed": "Das neue Fenster konnte nicht geöffnet werden. Der Tab bleibt im ursprünglichen Fenster.",
+      "moveWindowChanged": "Die Notiz wurde beim Öffnen des neuen Fensters geändert. Verschieben Sie sie erneut.",
       "close": "Schließen",
       "closeOthers": "Andere schließen",
       "closeSavedTabs": "Gespeicherte Tabs schließen",

@@ -207,6 +207,9 @@
       "showInFolder": "在資料夾中顯示"
     },
     "tabs": {
+      "moveToNewWindow": "移到新視窗",
+      "moveWindowFailed": "無法開啟新視窗，筆記仍在原視窗。",
+      "moveWindowChanged": "開啟新視窗時筆記有了變更，請再移動一次。",
       "close": "關閉",
       "closeOthers": "關閉其他",
       "closeSavedTabs": "關閉已儲存的標籤頁",

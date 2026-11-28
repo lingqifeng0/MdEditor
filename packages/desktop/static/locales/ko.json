@@ -207,6 +207,9 @@
       "showInFolder": "폴더에서 보기"
     },
     "tabs": {
+      "moveToNewWindow": "새 창으로 이동",
+      "moveWindowFailed": "새 창을 열 수 없습니다. 탭은 원래 창에 그대로 있습니다.",
+      "moveWindowChanged": "새 창을 여는 동안 노트가 변경되었습니다. 다시 이동해 주세요.",
       "close": "닫기",
       "closeOthers": "다른 탭 닫기",
       "closeSavedTabs": "저장된 탭 닫기",

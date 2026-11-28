@@ -101,6 +101,15 @@ export const launchElectron = async(
   return { app, page }
 }
 
+// Tests that deliberately leave edits in disposable profiles must bypass the
+// native save prompt so teardown can finish without manual input.
+export const closeElectronWithoutSaving = async(app: ElectronApplication): Promise<void> => {
+  await app.evaluate(({ BrowserWindow }) => {
+    for (const window of BrowserWindow.getAllWindows()) window.destroy()
+  })
+  await app.close()
+}
+
 // Capture renderer-process errors that would otherwise pop the "Unexpected
 // error" dialog. We attach a parallel listener to the same IPC channel
 // (`mt::handle-renderer-error`) that exceptionHandler.ts listens on, and

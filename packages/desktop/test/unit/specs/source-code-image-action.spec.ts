@@ -78,7 +78,7 @@ const loadComponent = (deps: Record<string, unknown>) => {
     'exports',
     'module',
     `const { _defineComponent, ref, shallowRef, markRaw, watch, onMounted, onBeforeUnmount, nextTick,
-      useEditorStore, usePreferencesStore, storeToRefs, codeMirror,
+      getOpeningTabView, useEditorStore, usePreferencesStore, storeToRefs, codeMirror,
       setCursorAtFirstLine, setTextDirection, getWordCount, adjustCursor, bus,
       oneDarkThemes, railscastsThemes, buildSourceToc, findMarkdownHeadingLine, scrollSourceEditorToLine,
       setPluginEditor, publishPluginSnapshot, offsetToIndex } = __deps
@@ -102,6 +102,7 @@ const makeDeps = (over: Record<string, unknown> = {}) => ({
   onMounted: () => {},
   onBeforeUnmount: () => {},
   nextTick: () => Promise.resolve(),
+  getOpeningTabView: () => null,
   useEditorStore: () => ({ listToc: [], UPDATE_TOC: () => {}, LISTEN_FOR_CONTENT_CHANGE: () => {} }),
   usePreferencesStore: () => ({}),
   storeToRefs: () => ({ theme: ref(''), sourceCode: ref(true), currentFile: ref(null) }),

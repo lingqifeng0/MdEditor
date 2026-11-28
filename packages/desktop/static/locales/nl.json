@@ -207,6 +207,9 @@
       "showInFolder": "Tonen in map"
     },
     "tabs": {
+      "moveToNewWindow": "Naar nieuw venster verplaatsen",
+      "moveWindowFailed": "Het nieuwe venster kon niet worden geopend. Het tabblad staat nog in het oorspronkelijke venster.",
+      "moveWindowChanged": "De notitie is gewijzigd tijdens het openen van het venster. Probeer deze opnieuw te verplaatsen.",
       "close": "Sluiten",
       "closeOthers": "Andere sluiten",
       "closeSavedTabs": "Opgeslagen tabbladen sluiten",

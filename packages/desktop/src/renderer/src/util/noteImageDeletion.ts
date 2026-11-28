@@ -3,9 +3,9 @@ import { useEditorStore } from '@/store/editor'
 import { askImageOperation, askImageRemoval } from './imageOperationDialog'
 import type { IImageDeleteRequest } from '@muyajs/core'
 import type { IFileState } from '@shared/types/files'
+import type { DeletedNoteImage } from '@shared/types/tabWindow'
 
-interface DeletedImage { noteId: string; src: string; token: string; remaining: number; restored: boolean; failed?: boolean }
-const deletedImages: DeletedImage[] = []
+const deletedImages: DeletedNoteImage[] = []
 let deleting = false
 let synchronizing = false
 let synchronizeAgain = false
@@ -82,6 +82,19 @@ export const requestNoteImageDeletion = async(request: IImageDeleteRequest): Pro
 
 export const hasDeletedNoteImages = (noteIds: string[]): boolean => deletedImages.some(entry => noteIds.includes(entry.noteId))
 
+export const getDeletedNoteImages = (noteId: string): DeletedNoteImage[] =>
+  deletedImages.filter(entry => entry.noteId === noteId)
+
+export const adoptDeletedNoteImages = (entries: DeletedNoteImage[]): void => {
+  deletedImages.push(...entries)
+}
+
+export const forgetDeletedNoteImages = (noteId: string): void => {
+  for (let index = deletedImages.length - 1; index >= 0; index--) {
+    if (deletedImages[index]?.noteId === noteId) deletedImages.splice(index, 1)
+  }
+}
+
 export async function discardDeletedNoteImages(noteIds: string[], tabs: IFileState[]): Promise<void> {
   deleting = true
   try {
@@ -96,9 +109,7 @@ export async function discardDeletedNoteImages(noteIds: string[], tabs: IFileSta
         if (!result.ok) throw new Error(result.error)
         entry.restored = true
       }
-      for (let index = deletedImages.length - 1; index >= 0; index--) {
-        if (deletedImages[index]?.noteId === noteId) deletedImages.splice(index, 1)
-      }
+      forgetDeletedNoteImages(noteId)
     }
   } finally { deleting = false }
 }

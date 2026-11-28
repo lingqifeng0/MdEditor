@@ -207,6 +207,9 @@
       "showInFolder": "Afficher dans le dossier"
     },
     "tabs": {
+      "moveToNewWindow": "Déplacer vers une nouvelle fenêtre",
+      "moveWindowFailed": "La nouvelle fenêtre n’a pas pu s’ouvrir. L’onglet est toujours dans sa fenêtre d’origine.",
+      "moveWindowChanged": "La note a changé pendant l’ouverture de la fenêtre. Réessayez de la déplacer.",
       "close": "Fermer",
       "closeOthers": "Fermer les autres",
       "closeSavedTabs": "Fermer les onglets sauvegardés",

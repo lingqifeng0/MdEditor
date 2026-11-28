@@ -1,5 +1,6 @@
 import {
   SEPARATOR,
+  getMoveToNewWindow,
   getCloseThis,
   getCloseOthers,
   getCloseSaved,
@@ -55,6 +56,8 @@ export const showContextMenu = (event: ContextMenuClickEvent, tab: TabLike): voi
   }
 
   const items = [
+    getMoveToNewWindow(),
+    SEPARATOR,
     closeThis,
     closeOthers,
     closeSaved,

@@ -18,6 +18,7 @@ import {
   TrailingNewlineCommand
 } from '../commands'
 import { defineStore } from 'pinia'
+import { nextTick } from 'vue'
 import { usePreferencesStore } from './preferences'
 import { useProjectStore } from './project'
 import { useLayoutStore } from './layout'
@@ -25,12 +26,13 @@ import { useMainStore } from '.'
 import { t } from '../i18n'
 import { debouncedSendBufferedState, sendBufferedState } from './bufferedState'
 import { getRenamedFilename } from 'common/filename'
-import { commitNoteImages, hasNoteImageDrafts, releaseNoteImages } from '../util/noteImageDrafts'
-import { discardDeletedNoteImages, hasDeletedNoteImages } from '../util/noteImageDeletion'
+import { commitNoteImages, hasNoteImageDrafts, releaseNoteImages, trackNoteImageDraft } from '../util/noteImageDrafts'
+import { adoptDeletedNoteImages, discardDeletedNoteImages, forgetDeletedNoteImages, getDeletedNoteImages, hasDeletedNoteImages } from '../util/noteImageDeletion'
 import type { IpcMainEventChannels } from '@shared/types/ipc'
 import type {
   IFileState,
   FileNotification,
+  DiskFileChange,
   FileWordCount,
   LineEnding,
   MarkdownDocument,
@@ -39,6 +41,7 @@ import type {
   PageOptions,
   TabOptions
 } from '@shared/types/files'
+import type { TabWindowTransfer, TabWindowView } from '@shared/types/tabWindow'
 
 // ----------------------------------------------------------------------------
 // Local helper types
@@ -69,19 +72,7 @@ interface PushTabNotificationPayload {
   style?: string
   exclusiveType?: string
   action?: FileNotification['action']
-}
-
-interface FileChangePayload {
-  pathname: string
-  data: {
-    isMixedLineEndings?: boolean
-    lineEnding?: LineEnding | string
-    adjustLineEndingOnSave?: boolean
-    trimTrailingNewline?: number
-    encoding?: IFileState['encoding']
-    markdown: string
-    filename: string
-  }
+  diskChange?: DiskFileChange
 }
 
 interface FormatLinkClickPayload {
@@ -157,6 +148,9 @@ export interface EditorState {
 }
 
 const autoSaveTimers = new Map<string, ReturnType<typeof setTimeout>>()
+const movingTabs = new Set<string>()
+let openingTabView: TabWindowView | null = null
+export const getOpeningTabView = (): TabWindowView | null => openingTabView
 
 export const useEditorStore = defineStore('editor', {
   state: (): EditorState => ({
@@ -304,8 +298,10 @@ export const useEditorStore = defineStore('editor', {
      */
     pushTabNotification(data: PushTabNotificationPayload): void {
       const defaultAction: FileNotification['action'] = () => {}
-      const { tabId, msg } = data
-      const action = data.action || defaultAction
+      const { tabId, msg, diskChange } = data
+      const action = diskChange
+        ? (status?: unknown) => { if (status) this.loadChange(diskChange) }
+        : data.action ?? defaultAction
       const showConfirm = data.showConfirm || false
       const style = data.style || 'info'
       // Whether only one notification should exist.
@@ -334,11 +330,12 @@ export const useEditorStore = defineStore('editor', {
         showConfirm,
         style,
         exclusiveType,
+        diskChange,
         action
       })
     },
 
-    loadChange(change: FileChangePayload): void {
+    loadChange(change: DiskFileChange): void {
       const { tabs, currentFile } = this
       const { data, pathname } = change
       const {
@@ -1014,6 +1011,51 @@ export const useEditorStore = defineStore('editor', {
       }
     },
 
+    async MOVE_TAB_TO_NEW_WINDOW(tabId: string): Promise<boolean> {
+      const tab = this.tabs.find(file => file.id === tabId)
+      if (!tab || movingTabs.has(tabId)) return false
+      movingTabs.add(tabId)
+      const reportFailure = (key: string): void => {
+        notice.notify({ title: t('contextMenu.tabs.moveToNewWindow'), message: t(key), type: 'warning' })
+      }
+      try {
+        this.flushActiveEditor()
+        const view: TabWindowView = {}
+        bus.emit('tab-window-snapshot', { tabId, view })
+        const transfer: TabWindowTransfer = {
+          file: createTabWindowFile(tab),
+          view: deepClone(view),
+          sourceCode: usePreferencesStore().sourceCode,
+          hasDraftImages: hasNoteImageDrafts([tabId]),
+          deletedImages: deepClone(getDeletedNoteImages(tabId))
+        }
+        const targetId = await window.electron.ipcRenderer.invoke('mt::tab-window::prepare', transfer)
+        this.flushActiveEditor()
+        const liveTab = this.tabs.find(file => file.id === tabId)
+        if (targetId === null) {
+          if (liveTab) reportFailure('contextMenu.tabs.moveWindowFailed')
+          return false
+        }
+        const unchanged = liveTab === tab && sameTabWindowFile(tab, transfer.file)
+        // Acceptance and removal are synchronous so an edit or save cannot land
+        // between validating the original tab and committing the handoff.
+        const moved = window.electron.ipcRenderer.sendSync('mt::tab-window::finish', targetId, unchanged)
+        if (moved) {
+          forgetDeletedNoteImages(tabId)
+          this.FORCE_CLOSE_TAB(tab)
+        } else if (liveTab) {
+          reportFailure(unchanged ? 'contextMenu.tabs.moveWindowFailed' : 'contextMenu.tabs.moveWindowChanged')
+        }
+        return moved
+      } catch (error) {
+        console.error('Failed to move a tab to a new window:', error)
+        reportFailure('contextMenu.tabs.moveWindowFailed')
+        return false
+      } finally {
+        movingTabs.delete(tabId)
+      }
+    },
+
     // This events are only used during window creation.
     LISTEN_FOR_BOOTSTRAP_WINDOW(): void {
       const preferencesStore = usePreferencesStore()
@@ -1047,17 +1089,21 @@ export const useEditorStore = defineStore('editor', {
         }, 100)
       }, 400)
 
-      window.electron.ipcRenderer.on('mt::bootstrap-editor', (_, config) => {
+      window.electron.ipcRenderer.on('mt::tab-window::image-history', (_, entries) => {
+        adoptDeletedNoteImages(entries)
+      })
+
+      window.electron.ipcRenderer.on('mt::bootstrap-editor', async(_, config) => {
         const {
           addBlankTab,
           markdownList,
           lineEnding,
           sideBarVisibility,
           tabBarVisibility,
-          sourceCodeModeEnabled
+          sourceCodeModeEnabled,
+          tabTransfer
         } = config
 
-        window.electron.ipcRenderer.send('mt::window-initialized')
         mainStore.SET_INITIALIZED()
         preferencesStore.SET_USER_PREFERENCE({ endOfLine: lineEnding })
         layoutStore.SET_LAYOUT({
@@ -1071,7 +1117,24 @@ export const useEditorStore = defineStore('editor', {
           checked: !!sourceCodeModeEnabled
         })
 
-        if (addBlankTab) {
+        if (tabTransfer) {
+          const { notifications, ...file } = tabTransfer.file
+          const tab: IFileState = {
+            ...file,
+            notifications: [],
+            searchMatches: deepClone(defaultFileState.searchMatches)
+          }
+          if (!tabTransfer.view.saveHistory) {
+            tab.history = { stack: [{ id: 0 }], index: 0, lastEditIndex: 0 }
+            tab.lastSavedHistoryId = tab.isSaved ? 0 : -1
+          }
+          openingTabView = tabTransfer.view
+          this.UPDATE_CURRENT_FILE(tab)
+          if (tabTransfer.hasDraftImages) trackNoteImageDraft(tab.id)
+          for (const note of notifications) this.pushTabNotification({ ...note, tabId: tab.id })
+          await nextTick()
+          openingTabView = null
+        } else if (addBlankTab) {
           this.NEW_UNTITLED_TAB({ selected: true })
         } else if (markdownList.length) {
           let isFirst = true
@@ -1083,6 +1146,7 @@ export const useEditorStore = defineStore('editor', {
             isFirst = false
           }
         }
+        window.electron.ipcRenderer.send('mt::window-initialized', tabTransfer?.file.id)
       })
     },
 
@@ -1877,7 +1941,8 @@ export const useEditorStore = defineStore('editor', {
               // Only the file's metadata changed on disk (e.g. a git checkout
               // that left the content byte-identical) — there is nothing to
               // reload and no reason to warn the user (#1861).
-              const newMarkdown = (change as unknown as FileChangePayload).data?.markdown
+              const diskChange = change as unknown as DiskFileChange
+              const newMarkdown = diskChange.data?.markdown
               if (typeof newMarkdown === 'string' && newMarkdown === tab.markdown) {
                 break
               }
@@ -1893,7 +1958,7 @@ export const useEditorStore = defineStore('editor', {
                   autoSaveTimers.delete(id)
                 }
 
-                this.loadChange(change as unknown as FileChangePayload)
+                this.loadChange(diskChange)
                 return
               }
 
@@ -1902,11 +1967,7 @@ export const useEditorStore = defineStore('editor', {
                 msg: t('store.editor.fileChangedOnDisk', { name: filename }),
                 showConfirm: true,
                 exclusiveType: 'file_changed',
-                action: (status) => {
-                  if (status) {
-                    this.loadChange(change as unknown as FileChangePayload)
-                  }
-                }
+                diskChange
               })
               debouncedSendBufferedState()
               break
@@ -2244,6 +2305,29 @@ const createBufferedTabState = (tab: Partial<IFileState> & { id: string }): Buff
     scrollTop: tab.scrollTop ?? defaultFileState.scrollTop
   }
 }
+
+const serializeTabNotifications = (tab: IFileState): TabWindowTransfer['file']['notifications'] =>
+  deepClone(tab.notifications.map(({ action: _action, ...notification }) => notification))
+
+const createTabWindowFile = (tab: IFileState): TabWindowTransfer['file'] => deepClone({
+  ...createBufferedTabState(tab),
+  history: tab.history,
+  lastSavedHistoryId: tab.lastSavedHistoryId,
+  isMixedLineEndings: tab.isMixedLineEndings,
+  notifications: serializeTabNotifications(tab)
+})
+
+const sameTabWindowFile = (tab: IFileState, snapshot: TabWindowTransfer['file']): boolean =>
+  tab.filename === snapshot.filename &&
+  tab.pathname === snapshot.pathname &&
+  tab.markdown === snapshot.markdown &&
+  tab.isSaved === snapshot.isSaved &&
+  tab.lastSavedHistoryId === snapshot.lastSavedHistoryId &&
+  tab.lineEnding === snapshot.lineEnding &&
+  tab.adjustLineEndingOnSave === snapshot.adjustLineEndingOnSave &&
+  tab.trimTrailingNewline === snapshot.trimTrailingNewline &&
+  equal(tab.encoding, snapshot.encoding) &&
+  equal(serializeTabNotifications(tab), snapshot.notifications)
 
 interface BufferedRestoreWarning {
   tabId: string | null

@@ -130,6 +130,10 @@ const closeTab = (tabId: unknown) => {
   }
 }
 
+const moveToNewWindow = (tabId: unknown) => {
+  if (typeof tabId === 'string') editorStore.MOVE_TAB_TO_NEW_WINDOW(tabId)
+}
+
 const closeOthers = (tabId: unknown) => {
   const tab = tabs.value.find((f) => f.id === tabId)
   if (tab) {
@@ -184,6 +188,7 @@ watch(
 )
 
 onMounted(() => {
+  bus.on('TABS::move-to-new-window', moveToNewWindow)
   bus.on('TABS::close-this', closeTab)
   bus.on('TABS::close-others', closeOthers)
   bus.on('TABS::close-saved', closeSaved)
@@ -256,6 +261,7 @@ onBeforeUnmount(() => {
   }
 
   // Remove event listeners
+  bus.off('TABS::move-to-new-window', moveToNewWindow)
   bus.off('TABS::close-this', closeTab)
   bus.off('TABS::close-others', closeOthers)
   bus.off('TABS::close-saved', closeSaved)

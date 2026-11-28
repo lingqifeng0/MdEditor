@@ -207,6 +207,9 @@
       "showInFolder": "在文件夹中显示"
     },
     "tabs": {
+      "moveToNewWindow": "移到新窗口",
+      "moveWindowFailed": "无法打开新窗口，笔记仍在原窗口。",
+      "moveWindowChanged": "打开新窗口时笔记有了改动，请再移动一次。",
       "close": "关闭",
       "closeOthers": "关闭其他",
       "closeSavedTabs": "关闭已保存的标签页",

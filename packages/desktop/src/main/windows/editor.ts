@@ -13,6 +13,7 @@ import { loadMarkdownFile } from '../filesystem/markdown'
 import { switchLanguage } from '../spellchecker'
 import fs from 'fs'
 import { APP_NAME } from 'common/appIdentity'
+import type { TabWindowTransfer } from '@shared/types/tabWindow'
 
 type RawMarkdownDocument = Awaited<ReturnType<typeof loadMarkdownFile>>
 
@@ -88,15 +89,18 @@ class EditorWindow extends BaseWindow {
     fileList: string[] = [],
     markdownList: string[] = [],
     options: Partial<BrowserWindowConstructorOptions> = {},
-    bufferStoreInfo: BufferStoreInfo | null = null
+    bufferStoreInfo: BufferStoreInfo | null = null,
+    tabTransfer?: TabWindowTransfer
   ): BrowserWindow {
     const { menu: appMenu, env, preferences, editorBufferStore } = this._accessor
     const addBlankTab =
-      !bufferStoreInfo && !rootDirectory && fileList.length === 0 && markdownList.length === 0
+      !tabTransfer && !bufferStoreInfo && !rootDirectory && fileList.length === 0 && markdownList.length === 0
 
     const mainWindowState = windowStateKeeper({
       defaultWidth: 1200,
-      defaultHeight: 800
+      defaultHeight: 800,
+      maximize: !tabTransfer,
+      fullScreen: !tabTransfer
     })
 
     const { x, y, width, height } = ensureWindowPosition(mainWindowState)
@@ -156,7 +160,8 @@ class EditorWindow extends BaseWindow {
     }
 
     // Create a menu for the current window
-    appMenu.addEditorMenu(win, { sourceCodeModeEnabled: sourceCodeModeEnabled as boolean })
+    const initialSourceMode = tabTransfer?.sourceCode ?? sourceCodeModeEnabled
+    appMenu.addEditorMenu(win, { sourceCodeModeEnabled: !!initialSourceMode })
 
     win.webContents.on('context-menu', (event, params) => {
       showEditorContextMenu(win!, event, params, preferences.getItem('spellcheckerEnabled'))
@@ -167,7 +172,7 @@ class EditorWindow extends BaseWindow {
       this.emit('window-ready')
 
       // Restore and focus window
-      this.bringToFront()
+      if (!tabTransfer) this.bringToFront()
 
       const lineEnding = preferences.getPreferredEol()
       appMenu.updateLineEndingMenu(this.id!, lineEnding)
@@ -178,7 +183,8 @@ class EditorWindow extends BaseWindow {
         lineEnding,
         sideBarVisibility: resolvedSideBarVisibility,
         tabBarVisibility,
-        sourceCodeModeEnabled
+        sourceCodeModeEnabled: initialSourceMode,
+        tabTransfer
       })
 
       if (this.bufferStoreInfo!.filePath) {
@@ -205,7 +211,7 @@ class EditorWindow extends BaseWindow {
     })
 
     win.webContents.once('render-process-gone', async(_event, { reason }) => {
-      if (reason === 'clean-exit') {
+      if (reason === 'clean-exit' || (tabTransfer && !win?.isVisible())) {
         return
       }
 
@@ -273,7 +279,8 @@ class EditorWindow extends BaseWindow {
     })
 
     this.lifecycle = WindowLifecycle.LOADING
-    win.loadURL(this._buildUrlString(this.id, env, preferences))
+    // did-fail-load logs the failure. The tab transfer also uses it to roll back.
+    win.loadURL(this._buildUrlString(this.id, env, preferences)).catch(() => {})
     win.setSheetOffset(TITLE_BAR_HEIGHT)
 
     mainWindowState.manage(win)

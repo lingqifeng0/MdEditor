@@ -1,5 +1,9 @@
 import bus from '../../bus'
 
+export const moveToNewWindow = (tabId: string): void => {
+  bus.emit('TABS::move-to-new-window', tabId)
+}
+
 export const closeThis = (tabId: string): void => {
   bus.emit('TABS::close-this', tabId)
 }

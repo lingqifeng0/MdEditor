@@ -19,7 +19,7 @@ import type { CommandManager } from '../../commands'
 import { EXTENSION_HASN, PANDOC_EXTENSIONS, URL_REG } from '../../config'
 import { normalizeAndResolvePath, resolveLocalLinkTarget, writeFile } from '../../filesystem'
 import { writeMarkdownFile } from '../../filesystem/markdown'
-import { imageDrafts } from '../../filesystem/imageDraftState'
+import { getDraftOwner, imageDrafts } from '../../filesystem/imageDraftState'
 import { renameFileWithoutOverwrite } from '../../filesystem/renameFile'
 import { getPath, getRecommendTitleFromMarkdownString } from '../../utils'
 import pandoc, {
@@ -325,7 +325,7 @@ const handleResponseForSave = async(
     const extension = path.extname(filePath) || '.md'
     filePath = !filePath.endsWith(extension) ? (filePath += extension) : filePath
     // Renderer save payloads populate every MarkdownDocumentOptions field.
-    await imageDrafts.save(`${e.sender.id}:${id}`, { id, pathname: filePath, sources: imageSources },
+    await imageDrafts.save(getDraftOwner(e.sender, id), { id, pathname: filePath, sources: imageSources },
       () => writeMarkdownFile(filePath!, markdown, options as Parameters<typeof writeMarkdownFile>[2]))
     if (win.isDestroyed()) {
       return null
@@ -515,7 +515,7 @@ ipcMain.on(
 
     if (filePath && !canceled) {
       filePath = path.resolve(filePath)
-      imageDrafts.save(`${e.sender.id}:${id}`, { id, pathname: filePath, sources: imageSources },
+      imageDrafts.save(getDraftOwner(e.sender, id), { id, pathname: filePath, sources: imageSources },
         () => writeMarkdownFile(filePath!, markdown, options as Parameters<typeof writeMarkdownFile>[2]))
         .then(() => {
           if (!alreadyExistOnDisk) {

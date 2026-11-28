@@ -75,10 +75,21 @@ export class SyntheticHistory {
   private counter = 0
   private readonly idByContent = new Map<bigint, number>()
 
-  constructor(baselineContent: string = '') {
+  constructor(baselineContent: string = '', snapshot?: Array<[string, number]>) {
+    if (snapshot?.length) {
+      for (const [hash, id] of snapshot) {
+        this.idByContent.set(BigInt(hash), id)
+        this.counter = Math.max(this.counter, id)
+      }
+      return
+    }
     // The freshly-loaded document is its own clean baseline; the store seeds
     // `lastSavedHistoryId` to 0, so the baseline content must map to id 0.
     this.idByContent.set(hashContent(baselineContent), 0)
+  }
+
+  snapshot(): Array<[string, number]> {
+    return Array.from(this.idByContent, ([hash, id]) => [hash.toString(), id])
   }
 
   // Return the monotonic id for the given content snapshot, assigning a fresh,

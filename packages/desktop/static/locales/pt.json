@@ -207,6 +207,9 @@
       "showInFolder": "Mostrar na Pasta"
     },
     "tabs": {
+      "moveToNewWindow": "Mover para nova janela",
+      "moveWindowFailed": "Não foi possível abrir a nova janela. A aba continua na janela original.",
+      "moveWindowChanged": "A nota mudou enquanto a nova janela era aberta. Tente movê-la novamente.",
       "close": "Fechar",
       "closeOthers": "Fechar outras",
       "closeSavedTabs": "Fechar abas salvas",

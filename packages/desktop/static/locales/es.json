@@ -207,6 +207,9 @@
       "showInFolder": "Mostrar en Carpeta"
     },
     "tabs": {
+      "moveToNewWindow": "Mover a una ventana nueva",
+      "moveWindowFailed": "No se pudo abrir la ventana nueva. La pestaña sigue en su ventana original.",
+      "moveWindowChanged": "La nota cambió mientras se abría la ventana. Vuelve a moverla.",
       "close": "Cerrar",
       "closeOthers": "Cerrar otros",
       "closeSavedTabs": "Cerrar pestañas guardadas",

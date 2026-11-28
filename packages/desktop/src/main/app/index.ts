@@ -25,6 +25,8 @@ import { matchSupportedLanguage } from 'common/i18n'
 import { getNativeThemeSource, isDarkApplicationTheme } from './nativeTheme'
 import type Accessor from './accessor'
 import type WindowManager from './windowManager'
+import type { TabWindowTransfer } from '@shared/types/tabWindow'
+import { registerTabWindowTransfers } from './tabWindowTransfer'
 
 interface CliArgs {
   _: string[]
@@ -439,13 +441,14 @@ class App {
     fileList: string[] = [],
     markdownList: string[] = [],
     options: Partial<BrowserWindowConstructorOptions> = {},
-    bufferStoreInfo: { id: string; filePath: string | null } | null = null
+    bufferStoreInfo: { id: string; filePath: string | null } | null = null,
+    tabTransfer?: TabWindowTransfer
   ): EditorWindow {
     const editor = new EditorWindow(this._accessor)
     if (rootDirectory) {
       this._accessor.preferences.setItems({ lastOpenedFolder: rootDirectory })
     }
-    editor.createWindow(rootDirectory, fileList, markdownList, options, bufferStoreInfo)
+    editor.createWindow(rootDirectory, fileList, markdownList, options, bufferStoreInfo, tabTransfer)
     this._windowManager.add(editor)
     if (this._windowManager.windowCount === 1) {
       this._accessor.menu.setActiveWindow(editor.id!)
@@ -618,6 +621,9 @@ class App {
   private _listenForIpcMain(): void {
     registerKeyboardListeners()
     registerSpellcheckerListeners()
+    registerTabWindowTransfers(this._windowManager, (tab, bounds) =>
+      this._createEditorWindow(null, [], [], { ...bounds, show: false }, null, tab)
+    )
 
     // Handle language setting requests
     ipcMain.on('mt::get-current-language', (event) => {

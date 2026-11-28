@@ -8,7 +8,8 @@
 
 <script setup lang="ts">
 import { ref, shallowRef, markRaw, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import { useEditorStore } from '@/store/editor'
+import { getOpeningTabView, useEditorStore } from '@/store/editor'
+import type { TabWindowCapture } from '@shared/types/tabWindow'
 import { usePreferencesStore } from '@/store/preferences'
 import { buildSourceToc, findMarkdownHeadingLine, scrollSourceEditorToLine } from '@/util/sourceModeToc'
 import { storeToRefs } from 'pinia'
@@ -201,7 +202,6 @@ const handleFileChange = (payload: unknown) => {
   } else {
     prepareTabSwitch()
     tabId.value = id
-
   }
 
   if (typeof newMarkdown === 'string') {
@@ -394,6 +394,14 @@ const flushSourceEditor = () => {
   if (editor.value) saveContent(editor.value)
 }
 
+const captureTabWindowView = (request: unknown): void => {
+  const { tabId: selectedId, view } = request as TabWindowCapture
+  const cm = editor.value
+  if (!cm || selectedId !== tabId.value) return
+  view.sourceHistory = cm.getHistory()
+  view.sourceScrollTop = Math.max(cm.getScrollInfo().top, sourceCodeContainer.value?.scrollTop ?? 0)
+}
+
 const handleImagePaste = async (event: ClipboardEvent): Promise<void> => {
   const cm = editor.value
   if (!cm || !preferencesStore.imageStrictRelativeDirectory) return
@@ -475,6 +483,7 @@ onMounted(() => {
   bus.on('image-action', handleImageAction)
   bus.on('scroll-to-header', handleScrollToHeader)
   bus.on('flush-active-editor', flushSourceEditor)
+  bus.on('tab-window-snapshot', captureTabWindowView)
 
   // CodeMirror's line tree relies on object identity and must not be proxied by Vue.
   const codeMirrorInstance = markRaw(codeMirror(container, codeMirrorConfig))
@@ -492,6 +501,16 @@ onMounted(() => {
     codeMirrorInstance.setSelection(anchor, focus, { scroll: true })
   } else {
     setCursorAtFirstLine(codeMirrorInstance)
+  }
+
+  const incomingView = getOpeningTabView()
+  if (incomingView?.sourceHistory) codeMirrorInstance.setHistory(incomingView.sourceHistory)
+  if (incomingView?.sourceScrollTop !== undefined) {
+    const top = incomingView.sourceScrollTop
+    nextTick(() => {
+      codeMirrorInstance.scrollTo(null, top)
+      if (container) container.scrollTop = top
+    })
   }
 
   editor.value = codeMirrorInstance
@@ -543,6 +562,7 @@ onBeforeUnmount(() => {
   lastSelectionKey = ''
   bus.off('scroll-to-header', handleScrollToHeader)
   bus.off('flush-active-editor', flushSourceEditor)
+  bus.off('tab-window-snapshot', captureTabWindowView)
 
   if (editor.value) {
     const { cursor, markdown: newMarkdown } = getMarkdownAndCursor(editor.value)

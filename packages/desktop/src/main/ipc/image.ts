@@ -10,12 +10,27 @@ import { resolveNoteImageDirectory } from 'common/imageDirectory'
 import { LocalImageWatcher } from '../filesystem/imageWatcher'
 import { prepareNoteImageDirectory } from '../filesystem/noteImageDirectory'
 import { ImageTrashLedger } from '../filesystem/imageTrash'
-import { imageDrafts as drafts } from '../filesystem/imageDraftState'
+import { getDraftOwner, imageDrafts as drafts, transferDraftOwner } from '../filesystem/imageDraftState'
 import { loadMarkdownFile } from '../filesystem/markdown'
 import type { ImageEditorResult, ImageRevealResult, ImageDraftReference, StoreDraftImageRequest, ReleaseDraftImagesRequest } from '@shared/types/ipc'
 import { t } from '../i18n'
 
 const pendingImageEditorRefresh = new WeakMap<BrowserWindow, () => void>()
+const trashLedgers = new WeakMap<WebContents, ImageTrashLedger>()
+
+const ledgerFor = (sender: WebContents): ImageTrashLedger => {
+  let ledger = trashLedgers.get(sender)
+  if (!ledger) {
+    ledger = new ImageTrashLedger(pathname => shell.trashItem(pathname))
+    trashLedgers.set(sender, ledger)
+  }
+  return ledger
+}
+
+export const transferTabImages = (source: WebContents, target: WebContents, noteId: string, tokens: string[]): void => {
+  transferDraftOwner(source, target, noteId)
+  if (tokens.length) trashLedgers.get(source)?.transferTo(ledgerFor(target), tokens)
+}
 
 const validEditorPath = (editorPath: string): boolean => typeof editorPath === 'string' &&
   !!editorPath.trim() && !editorPath.includes('\0') && path.isAbsolute(editorPath) &&
@@ -89,12 +104,11 @@ const openImageInEditor = async(sender: WebContents, src: string, documentPath: 
 
 export const registerImageHandlers = (): void => {
   const watchers = new Map<WebContents, LocalImageWatcher>()
-  const trashLedgers = new WeakMap<WebContents, ImageTrashLedger>()
   const preparing = new WeakSet<WebContents>()
-  ipcMain.handle('mt::image::store-draft', (event, request: StoreDraftImageRequest) => drafts.store(`${event.sender.id}:${request.noteId}`, request))
-  ipcMain.handle('mt::image::commit-draft', (event, note: ImageDraftReference) => drafts.commit(note, `${event.sender.id}:${note.id}`))
-  ipcMain.handle('mt::image::retain-draft-links', (event, note: ImageDraftReference) => drafts.retainLinks(`${event.sender.id}:${note.id}`, note))
-  ipcMain.handle('mt::image::release-drafts', (event, request: ReleaseDraftImagesRequest) => drafts.release(request.noteIds.map(id => `${event.sender.id}:${id}`), request.retained, request.scope))
+  ipcMain.handle('mt::image::store-draft', (event, request: StoreDraftImageRequest) => drafts.store(getDraftOwner(event.sender, request.noteId), request))
+  ipcMain.handle('mt::image::commit-draft', (event, note: ImageDraftReference) => drafts.commit(note, getDraftOwner(event.sender, note.id)))
+  ipcMain.handle('mt::image::retain-draft-links', (event, note: ImageDraftReference) => drafts.retainLinks(getDraftOwner(event.sender, note.id), note))
+  ipcMain.handle('mt::image::release-drafts', (event, request: ReleaseDraftImagesRequest) => drafts.release(request.noteIds.map(id => getDraftOwner(event.sender, id)), request.retained, request.scope))
   ipcMain.handle('mt::image::saved-markdown', async(_event, pathname: string) => (await loadMarkdownFile(pathname, 'lf')).markdown)
   ipcMain.handle('mt::image::prepare-directory', async(event, request) => {
     if (preparing.has(event.sender)) return { ok: false, error: '当前目录操作尚未完成。' }
@@ -108,11 +122,6 @@ export const registerImageHandlers = (): void => {
       return result
     } finally { preparing.delete(event.sender) }
   })
-  const ledgerFor = (sender: WebContents): ImageTrashLedger => {
-    let ledger = trashLedgers.get(sender)
-    if (!ledger) { ledger = new ImageTrashLedger(pathname => shell.trashItem(pathname)); trashLedgers.set(sender, ledger) }
-    return ledger
-  }
   ipcMain.handle('mt::image::trash', async(event, src: string, documentPath: string) => {
     const result = await ledgerFor(event.sender).remove(src, documentPath)
     if (result.ok) invalidateImages(event.sender)

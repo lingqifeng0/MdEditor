@@ -10,6 +10,14 @@ export const SEPARATOR = {
 // Use function form to avoid calling the translation function during module load
 type TabMenuItem = { _tabId: string; [key: string]: unknown }
 
+export const getMoveToNewWindow = () => ({
+  label: t('contextMenu.tabs.moveToNewWindow'),
+  id: 'moveTabToNewWindow',
+  click(menuItem: TabMenuItem) {
+    contextMenu.moveToNewWindow(menuItem._tabId)
+  }
+})
+
 export const getCloseThis = () => ({
   label: t('contextMenu.tabs.close'),
   id: 'closeThisTab',

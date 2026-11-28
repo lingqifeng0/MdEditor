@@ -207,6 +207,9 @@
       "showInFolder": "Klasörde Göster"
     },
     "tabs": {
+      "moveToNewWindow": "Yeni pencereye taşı",
+      "moveWindowFailed": "Yeni pencere açılamadı. Sekme önceki pencerede duruyor.",
+      "moveWindowChanged": "Yeni pencere açılırken not değişti. Yeniden taşımayı deneyin.",
       "close": "Kapat",
       "closeOthers": "Diğerlerini kapat",
       "closeSavedTabs": "Kaydedilmiş sekmeleri kapat",

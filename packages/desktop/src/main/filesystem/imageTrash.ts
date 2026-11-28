@@ -10,6 +10,15 @@ export class ImageTrashLedger {
   private entries = new Map<string, TrashEntry>()
   constructor(private trashItem: (pathname: string) => Promise<void>) {}
 
+  transferTo(target: ImageTrashLedger, tokens: string[]): void {
+    for (const token of tokens) {
+      const entry = this.entries.get(token)
+      if (!entry) continue
+      target.entries.set(token, entry)
+      this.entries.delete(token)
+    }
+  }
+
   async remove(src: string, documentPath: string): Promise<ImageTrashResult> {
     const candidates = localImagePathCandidates(src, documentPath)
     if (!candidates.length) return { ok: true }

@@ -143,7 +143,8 @@ import { addCommonStyle, setEditorWidth } from '@/util/theme'
 import { usePreferencesStore } from '@/store/preferences'
 import { attachLocalAttachmentContextMenu } from '@/util/localAttachmentContextMenu'
 import { normalizeToolbarOrder } from 'common/toolbar'
-import { useEditorStore } from '@/store/editor'
+import { getOpeningTabView, useEditorStore } from '@/store/editor'
+import type { TabWindowCapture } from '@shared/types/tabWindow'
 import { useProjectStore } from '@/store/project'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
@@ -1739,6 +1740,19 @@ const flushActiveEditor = () => {
   if (!sourceCode.value) editor.value?.flush()
 }
 
+const captureTabWindowView = (request: unknown): void => {
+  const { tabId, view } = request as TabWindowCapture
+  view.saveHistory = syntheticHistoryByTab.get(tabId)?.snapshot()
+  if (sourceCode.value) return
+  if (currentFile.value?.id === tabId && editor.value) {
+    view.editorHistory = editor.value.getHistory()
+    editorStore.PERSIST_CURSOR(tabId, serializeCursor(editor.value.getSelection()))
+    editorStore.updateScrollPosition(tabId, getScrollContainer()?.scrollTop ?? currentFile.value.scrollTop)
+  } else {
+    view.editorHistory = engineHistoryByTab.get(tabId)
+  }
+}
+
 const focusEditor = () => {
   editor.value?.focus()
 }
@@ -1970,7 +1984,17 @@ onMounted(() => {
   // after the first edit — so the pristine content never maps to id 0 and
   // undoing back to the on-disk content can never read as clean again (PG15).
   if (currentFile.value?.id) {
-    getSyntheticHistory(currentFile.value.id, muya.getMarkdown())
+    const { id } = currentFile.value
+    const incomingView = getOpeningTabView()
+    if (incomingView?.saveHistory) {
+      syntheticHistoryByTab.set(id, new SyntheticHistory(muya.getMarkdown(), incomingView.saveHistory))
+    } else {
+      getSyntheticHistory(id, muya.getMarkdown())
+    }
+    if (incomingView?.editorHistory) {
+      muya.setHistory(incomingView.editorHistory)
+      engineHistoryByTab.set(id, incomingView.editorHistory)
+    }
   }
 
   const container = getScrollContainer()!
@@ -1985,7 +2009,12 @@ onMounted(() => {
   switchLanguageCommand = new SpellcheckerLanguageCommand(spellchecker)
   setTimeout(() => bus.emit('cmd::register-command', switchLanguageCommand), 100)
 
-  if (typewriter.value) {
+  if (getOpeningTabView() && !sourceCode.value && currentFile.value) {
+    const { cursor, muyaIndexCursor, scrollTop } = currentFile.value
+    if (cursor) applyCursor(muya, cursor)
+    else if (isIndexCursor(muyaIndexCursor)) muya.setCursorByOffset(muyaIndexCursor)
+    scrollToCords(scrollTop)
+  } else if (typewriter.value) {
     scrollToCursor()
   }
 
@@ -2006,6 +2035,7 @@ onMounted(() => {
   bus.on('image-uploaded', handleUploadedImage)
   bus.on('file-changed', handleFileChange)
   bus.on('flush-active-editor', flushActiveEditor)
+  bus.on('tab-window-snapshot', captureTabWindowView)
   bus.on('editor-blur', blurEditor)
   bus.on('editor-focus', focusEditor)
   bus.on('copyAsRich', handleCopyPaste)
@@ -2236,6 +2266,7 @@ onBeforeUnmount(() => {
   bus.off('image-uploaded', handleUploadedImage)
   bus.off('file-changed', handleFileChange)
   bus.off('flush-active-editor', flushActiveEditor)
+  bus.off('tab-window-snapshot', captureTabWindowView)
   bus.off('editor-blur', blurEditor)
   bus.off('editor-focus', focusEditor)
   bus.off('copyAsRich', handleCopyPaste)

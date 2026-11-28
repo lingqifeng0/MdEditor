@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import type { ElectronApplication, Page } from 'playwright'
 import {
+  closeElectronWithoutSaving,
   getMarkdownContent,
   launchWithMarkdown,
   placeCaretInEditor,
@@ -71,7 +72,7 @@ test.describe('Tab management', () => {
   })
 
   test.afterAll(async() => {
-    if (app) await app.close()
+    if (app) await closeElectronWithoutSaving(app)
   })
 
   test('Initial document loads as a single tab in the tab list', async() => {
@@ -295,7 +296,7 @@ test.describe('Tab management', () => {
       // Undoing back to the exact on-disk content clears A's unsaved indicator.
       await expect.poll(isDirty, { timeout: 5000 }).toBe(false)
     } finally {
-      await aApp.close()
+      await closeElectronWithoutSaving(aApp)
     }
   })
 
